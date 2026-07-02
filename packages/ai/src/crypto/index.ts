@@ -41,7 +41,9 @@ export class AesGcmKeyStore implements KeyStore {
 
   async encrypt(plaintext: string): Promise<EncryptedValue> {
     const iv = randomBytes(12);
-    const cipher = createCipheriv("aes-256-gcm", this.masterKey, iv);
+    const cipher = createCipheriv("aes-256-gcm", this.masterKey, iv, {
+      authTagLength: 16,
+    });
     const ciphertext = Buffer.concat([
       cipher.update(plaintext, "utf8"),
       cipher.final(),
@@ -60,6 +62,7 @@ export class AesGcmKeyStore implements KeyStore {
       "aes-256-gcm",
       this.masterKey,
       Buffer.from(encrypted.iv, "base64"),
+      { authTagLength: 16 },
     );
     decipher.setAuthTag(Buffer.from(encrypted.authTag, "base64"));
 
