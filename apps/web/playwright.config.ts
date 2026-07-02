@@ -3,10 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Playwright E2E configuration for StanzaChat.
  *
- * Phase 1 smoke test: sign-up page renders, sign-in page renders.
- * The E2E job in CI starts `next start` against a compose Postgres
- * with a mocked LLM provider. For Phase 1, we test auth page rendering
- * only; full chat/artifact E2E arrives in Phase 3.
+ * Phase 1 smoke test: auth pages render and forms are interactive.
+ * The `webServer` starts the production Next.js server (`next start`)
+ * after the build step has completed. Locally it starts `next dev`.
  */
 export default defineConfig({
   testDir: "./e2e",
@@ -25,12 +24,10 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: "bun run dev",
-        url: "http://localhost:3000",
-        reuseExistingServer: true,
-        timeout: 60_000,
-      },
+  webServer: {
+    command: process.env.CI ? "bun run start" : "bun run dev",
+    url: "http://localhost:3000",
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,
+  },
 });
