@@ -20,7 +20,7 @@ Push to `main` additionally publishes the Docker image (`ghcr.io/<org>/stanzacha
 
 - **CodeQL** (`codeql.yml`): JS/TS analysis on PR + weekly schedule.
 - **Semgrep** (`semgrep.yml`): default ruleset + custom rules for guardrails (e.g. flag `allow-same-origin`, raw `req.json()` field access, queries missing scope helper).
-- **Dependabot** (`dependabot.yml`): monthly grouped minor/patch updates for bun/npm ecosystem + GitHub Actions; major version bumps are manual unless they are security updates.
+- **Renovate** (`renovate.json`): monthly grouped minor+patch updates for the npm ecosystem (Bun-aware; keeps `bun.lock` in sync) and GitHub Actions; non-security major bumps require maintainer approval via the dependency dashboard; security updates run out-of-band via `osvVulnerabilityAlerts`. Renovate runs as a GitHub App on the repository; there is no in-repo workflow.
 - **DCO check**: enforced via the DCO app or `dco-check` action; contributors sign off commits (`git commit -s`).
 
 ## Conventions
