@@ -1,0 +1,81 @@
+name: Bug report
+description: Report a defect in StanzaChat
+title: "bug: <short summary>"
+labels:
+  - bug
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill in every section so we can reproduce quickly.
+        For suspected security vulnerabilities, do NOT file a public issue — use the private advisory link in `SECURITY.md`.
+  - type: input
+    id: version
+    attributes:
+      label: StanzaChat version / commit
+      description: Output of the app's About page, or the git commit SHA you built from.
+      placeholder: "v0.1.3 or a1b2c3d"
+    validations:
+      required: true
+  - type: dropdown
+    id: deploy
+    attributes:
+      label: Deploy method
+      description: Which compose profile / deployment shape are you running?
+      options:
+        - Single-user compose (profile "single")
+        - Team compose (profile "team")
+        - Custom / other (describe in additional context)
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, ordered steps that reliably reproduce the bug.
+      placeholder: |
+        1. Log in as instance admin.
+        2. Open a new chat and send "hello".
+        3. Observe streaming stops mid-message.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened, per SPEC or your understanding of the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened, including any error message shown to the user.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack traces
+      description: |
+        Relevant excerpts from `docker compose logs app` or the browser console. Redact secrets, tokens, and provider API keys before pasting.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Browser, OS, provider used, anything else that might matter.
+    validations:
+      required: false
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: This is not a security vulnerability (those go through Private Vulnerability Reporting).
+          required: true

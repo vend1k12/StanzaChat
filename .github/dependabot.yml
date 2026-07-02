@@ -1,0 +1,45 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(repo)"
+      include: scope
+    labels:
+      - dependencies
+      - npm
+    groups:
+      npm-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+      npm-security:
+        applies-to: security-updates
+        update-types:
+          - patch
+          - minor
+          - major
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: scope
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      github-actions-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch

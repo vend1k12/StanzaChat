@@ -1,0 +1,275 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Turborepo Remote Cache credentials.
+  # Reference through secrets so absence degrades gracefully:
+  # when unset, turbo simply runs without a remote cache instead of failing.
+  # TURBO_TEAM is stored as a secret (single source of truth alongside TURBO_TOKEN).
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: ESLint
+        run: bun run lint
+
+      - name: Prettier check
+        run: bun x prettier --check .
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run check-types
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1);"; then
+            echo "Running bun run test"
+            bun run test
+          else
+            echo "skipped: no test script yet (pre-Phase-1)"
+            exit 0
+          fi
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Guard - integration targets present
+        id: guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob globstar
+          has_targets=0
+          for dir in packages/db packages/auth; do
+            if [ -d "$dir" ]; then
+              matches=("$dir"/**/*.test.ts "$dir"/**/*.test.tsx "$dir"/**/*.spec.ts "$dir"/**/*.spec.tsx "$dir"/**/*.integration.test.ts)
+              if [ ${#matches[@]} -gt 0 ]; then
+                has_targets=1
+                break
+              fi
+            fi
+          done
+          echo "has_targets=${has_targets}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Bun
+        if: steps.guard.outputs.has_targets == '1'
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node
+        if: steps.guard.outputs.has_targets == '1'
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        if: steps.guard.outputs.has_targets == '1'
+        run: bun install --frozen-lockfile
+
+      - name: Run integration tests
+        if: steps.guard.outputs.has_targets == '1'
+        run: bun run test:integration
+
+      - name: Skip notice
+        if: steps.guard.outputs.has_targets != '1'
+        run: 'echo "skipped: target not present (no test files in packages/db or packages/auth)"'
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+  e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Guard - Playwright config present
+        id: guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '(^|/)playwright\.config\.(ts|js|mjs|cjs)$' >/dev/null 2>&1; then
+            echo "has_targets=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_targets=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Bun
+        if: steps.guard.outputs.has_targets == '1'
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node
+        if: steps.guard.outputs.has_targets == '1'
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        if: steps.guard.outputs.has_targets == '1'
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        if: steps.guard.outputs.has_targets == '1'
+        run: bun x playwright install --with-deps chromium
+
+      - name: Run Playwright E2E
+        if: steps.guard.outputs.has_targets == '1'
+        run: bun run test:e2e
+
+      - name: Upload Playwright traces on failure
+        if: failure() && steps.guard.outputs.has_targets == '1'
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: playwright-traces
+          path: |
+            **/playwright-report/**
+            **/test-results/**
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Skip notice
+        if: steps.guard.outputs.has_targets != '1'
+        run: 'echo "skipped: target not present (no playwright.config.* in repo)"'
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Guard - Dockerfile present
+        id: guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f docker/app.Dockerfile ]; then
+            echo "has_targets=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_targets=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Docker Buildx
+        if: steps.guard.outputs.has_targets == '1'
+        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
+
+      - name: Build Docker image (no push)
+        if: steps.guard.outputs.has_targets == '1'
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+        with:
+          context: .
+          file: docker/app.Dockerfile
+          push: false
+          load: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Skip notice
+        if: steps.guard.outputs.has_targets != '1'
+        run: 'echo "skipped: target not present (docker/app.Dockerfile missing)"'

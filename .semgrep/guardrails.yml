@@ -1,0 +1,115 @@
+## Custom Semgrep guardrail rules for StanzaChat.
+##
+## Each rule enforces a hard constraint from `docs/agents/guardrails.md`
+## and `SPEC.MD` §5.3 / §7. All rules are ERROR severity: the CI workflow
+## (`.github/workflows/semgrep.yml`) runs semgrep with `--error`, so a
+## match fails the required check. Keep patterns conservative to avoid
+## false positives; a missed catch is preferable to noise that trains
+## reviewers to bypass.
+
+rules:
+  - id: iframe-allow-same-origin
+    languages:
+      - generic
+    severity: ERROR
+    message: >-
+      Sandbox attribute contains `allow-same-origin`, which grants the
+      artifact iframe access to host cookies and localStorage. See
+      `docs/agents/guardrails.md` #1 and `SPEC.MD` §5.3: the only
+      permitted sandbox is `sandbox="allow-scripts"`.
+    paths:
+      include:
+        - "*.ts"
+        - "*.tsx"
+        - "*.js"
+        - "*.jsx"
+        - "*.html"
+        - "*.htm"
+      exclude:
+        - "docs/"
+        - ".semgrep/"
+        - "*.md"
+    pattern-regex: 'sandbox\s*=\s*["''][^"'']*allow-same-origin[^"'']*["'']'
+
+  - id: no-allow-popups-or-top-navigation
+    languages:
+      - generic
+    severity: ERROR
+    message: >-
+      Sandbox attribute contains `allow-popups` or `allow-top-navigation`.
+      See `docs/agents/guardrails.md` #1 and `SPEC.MD` §5.3: the artifact
+      sandbox must never allow the model to open popups or navigate the
+      top frame.
+    paths:
+      include:
+        - "*.ts"
+        - "*.tsx"
+        - "*.js"
+        - "*.jsx"
+        - "*.html"
+        - "*.htm"
+      exclude:
+        - "docs/"
+        - ".semgrep/"
+        - "*.md"
+    pattern-regex: 'sandbox\s*=\s*["''][^"'']*(allow-popups|allow-top-navigation)[^"'']*["'']'
+
+  - id: raw-req-json-field-access
+    languages:
+      - typescript
+    severity: ERROR
+    message: >-
+      Direct property access on an awaited `req.json()` / `request.json()`
+      result skips zod validation. Route handlers must parse the body with
+      a zod schema from `packages/shared` before touching fields. See
+      `docs/agents/guardrails.md` and `docs/agents/conventions.md`
+      "API routes" section.
+    paths:
+      exclude:
+        - "docs/"
+        - ".semgrep/"
+        - "*.md"
+        - "**/*.test.ts"
+        - "**/*.spec.ts"
+        - "**/__tests__/**"
+    pattern-either:
+      - pattern: (await $REQ.json()).$FIELD
+      - pattern: (await $REQ.json())[$KEY]
+
+  - id: db-query-missing-scope
+    languages:
+      - typescript
+    severity: ERROR
+    message: >-
+      Heuristic: a drizzle query on a tenant-scoped table
+      (`chats`, `messages`, `artifacts`, `workspaces`) filters only by
+      `id`, with no organization/workspace scope in the `where` clause.
+      Data-access functions must accept a scope argument and filter by
+      the full tenant chain (`organization_id` -> `workspace_id`). See
+      `docs/agents/guardrails.md` #6 and `SPEC.MD` §7. NOTE: this rule
+      is intentionally narrow (id-only equality). Composite `and(...)`
+      predicates that include a scope column are not flagged; if you
+      hit a false positive, restructure your `where` to make the scope
+      chain explicit.
+    paths:
+      exclude:
+        - "docs/"
+        - ".semgrep/"
+        - "*.md"
+        - "**/*.test.ts"
+        - "**/*.spec.ts"
+        - "**/__tests__/**"
+        - "**/migrations/**"
+    pattern-either:
+      - pattern: $DB.select($$$).from($$$).where(eq(chats.id, $ID))
+      - pattern: $DB.select($$$).from($$$).where(eq(messages.id, $ID))
+      - pattern: $DB.select($$$).from($$$).where(eq(artifacts.id, $ID))
+      - pattern: $DB.select($$$).from($$$).where(eq(workspaces.id, $ID))
+      - pattern: $DB.delete($$$).where(eq(chats.id, $ID))
+      - pattern: $DB.delete($$$).where(eq(messages.id, $ID))
+      - pattern: $DB.delete($$$).where(eq(artifacts.id, $ID))
+      - pattern: $DB.delete($$$).where(eq(workspaces.id, $ID))
+      - pattern: $DB.update($$$).set($$$).where(eq(chats.id, $ID))
+      - pattern: $DB.update($$$).set($$$).where(eq(messages.id, $ID))
+      - pattern: $DB.update($$$).set($$$).where(eq(artifacts.id, $ID))
+      - pattern: $DB.update($$$).set($$$).where(eq(workspaces.id, $ID))

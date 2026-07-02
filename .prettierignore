@@ -1,0 +1,18 @@
+# Package manager
+bun.lock
+node_modules
+
+# Build & cache outputs
+.next
+.turbo
+build
+coverage
+dist
+out
+
+# Release-managed (release-please owns Unreleased sections)
+CHANGELOG.md
+
+# Agent scratch dirs (not source we hand-edit)
+.claude
+.rpiv

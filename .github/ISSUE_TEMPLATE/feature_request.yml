@@ -1,0 +1,58 @@
+name: Feature request
+description: Propose a change or addition to StanzaChat
+title: "feat: <short summary>"
+labels:
+  - feature
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening: check `SPEC.MD` §1.2 for explicitly deferred features and §10 for the roadmap. Features already deferred require a SPEC change first (see `docs/processes/development.md`).
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user-facing problem or workflow gap does this address? Concrete scenarios beat abstractions.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should StanzaChat do differently? Include UI sketches, API shape, or data-model impact if applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you weighed and why you discarded them, or "none" with justification.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: SPEC / scope impact
+      description: |
+        Does this require a new table, env var, cross-package dependency, or a deferred feature to move forward? If yes, note that a SPEC.MD edit will be required before merge.
+    validations:
+      required: false
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Willingness to contribute
+      description: Are you willing to open a PR for this?
+      options:
+        - Yes, I plan to submit a PR
+        - Yes, with maintainer guidance
+        - No, I am only requesting the feature
+    validations:
+      required: true
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I checked `SPEC.MD` and existing issues for prior discussion.
+          required: true
