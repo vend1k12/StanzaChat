@@ -13,14 +13,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # Turborepo Remote Cache credentials.
-  # Reference through secrets so absence degrades gracefully:
-  # when unset, turbo simply runs without a remote cache instead of failing.
-  # TURBO_TEAM is stored as a secret (single source of truth alongside TURBO_TOKEN).
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
 jobs:
   lint:
     name: Lint
@@ -44,6 +36,9 @@ jobs:
 
       - name: ESLint
         run: bun run lint
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
       - name: Prettier check
         run: bun x prettier --check .
@@ -70,6 +65,9 @@ jobs:
 
       - name: Typecheck
         run: bun run check-types
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
   unit:
     name: Unit tests
@@ -103,6 +101,9 @@ jobs:
             echo "skipped: no test script yet (pre-Phase-1)"
             exit 0
           fi
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
   integration:
     name: Integration tests
@@ -149,6 +150,9 @@ jobs:
       - name: Run integration tests
         if: steps.guard.outputs.has_targets == '1'
         run: bun run test:integration
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
       - name: Skip notice
         if: steps.guard.outputs.has_targets != '1'
@@ -177,6 +181,9 @@ jobs:
 
       - name: Build
         run: bun run build
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
   e2e:
     name: E2E tests
@@ -220,6 +227,9 @@ jobs:
       - name: Run Playwright E2E
         if: steps.guard.outputs.has_targets == '1'
         run: bun run test:e2e
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
       - name: Upload Playwright traces on failure
         if: failure() && steps.guard.outputs.has_targets == '1'
