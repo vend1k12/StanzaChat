@@ -1,4 +1,16 @@
 export {
+  type ChatMessage,
+  chatMessageSchema,
+  type CreateChat,
+  createChatSchema,
+  type CreateProvider,
+  createProviderSchema,
+  type UpdateChat,
+  updateChatSchema,
+  type UpdateProvider,
+  updateProviderSchema,
+} from "./api-schemas.js";
+export {
   ARTIFACT_TYPES,
   type ArtifactType,
   AUDIT_ACTIONS,
