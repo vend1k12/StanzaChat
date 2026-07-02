@@ -86,7 +86,7 @@ Scope changes require editing this file first (see `docs/processes/development.m
 │   ├── processes/              # Development, CI, release processes
 │   ├── architecture.md         # System architecture (public-facing)
 │   └── self-hosting.md         # Deployment guide
-├── .github/                    # Workflows, issue/PR templates, dependabot, CodeQL
+├── .github/                    # Workflows, issue/PR templates, Renovate, CodeQL
 ├── AGENTS.md                   # Thin pointer → docs/agents/
 ├── CLAUDE.md                   # Thin pointer → docs/agents/
 ├── CONTRIBUTING.md
@@ -255,7 +255,7 @@ GET    /api/admin/audit-logs
 
 ### Phase 0 — Repository foundation _(before any feature code)_
 
-Linters/formatters wired per stack table; CI (lint, typecheck, unit, build, E2E, docker build — all required on PR; Turbo remote cache); changesets + release-please; OSS files (LICENSE Apache-2.0, SECURITY, CODE_OF_CONDUCT, CONTRIBUTING, issue/PR templates, DCO, dependabot, CodeQL, semgrep); agent rules live in `docs/agents/`.
+Linters/formatters wired per stack table; CI (lint, typecheck, unit, build, E2E, docker build — all required on PR; Turbo remote cache); changesets + release-please; OSS files (LICENSE Apache-2.0, SECURITY, CODE_OF_CONDUCT, CONTRIBUTING, issue/PR templates, DCO, Renovate, CodeQL, semgrep); agent rules live in `docs/agents/`.
 **Done when:** a trivial PR runs the full green pipeline; release-please opens a release PR on merge.
 
 ### Phase 1 — Data & auth core

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":gitSignOff",
+    ":semanticCommitScope(repo)"
+  ],
+  "timezone": "Etc/UTC",
+  "schedule": ["before 5am on the first day of the month"],
+  "prConcurrentLimit": 2,
+  "prHourlyLimit": 0,
+  "branchConcurrentLimit": 2,
+  "minimumReleaseAge": "7 days",
+  "rangeStrategy": "bump",
+  "bumpVersion": null,
+  "dependencyDashboard": true,
+  "dependencyDashboardApproval": false,
+  "dependencyDashboardOSVVulnerabilitySummary": "all",
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": ["dependencies", "security"],
+    "commitMessagePrefix": "fix(repo)",
+    "schedule": ["at any time"],
+    "minimumReleaseAge": "0 days",
+    "dependencyDashboardApproval": false
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on the first day of the month"],
+    "commitMessageAction": "refresh"
+  },
+  "packageRules": [
+    {
+      "description": "Group all non-major npm updates into a single monthly PR.",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "npm minor and patch",
+      "commitMessagePrefix": "chore(repo)",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "repo",
+      "labels": ["dependencies", "npm"]
+    },
+    {
+      "description": "Non-security major npm updates surface via the dependency dashboard and must be approved by the maintainer before Renovate opens a PR.",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "commitMessagePrefix": "chore(repo)",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "repo",
+      "labels": ["dependencies", "npm", "major"]
+    },
+    {
+      "description": "Group all non-major GitHub Actions updates into a single monthly PR.",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "github-actions minor and patch",
+      "commitMessagePrefix": "ci",
+      "semanticCommitType": "ci",
+      "semanticCommitScope": "",
+      "labels": ["dependencies", "github-actions"]
+    },
+    {
+      "description": "Non-security major GitHub Actions updates require maintainer approval on the dependency dashboard.",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "commitMessagePrefix": "ci",
+      "semanticCommitType": "ci",
+      "semanticCommitScope": "",
+      "labels": ["dependencies", "github-actions", "major"]
+    }
+  ],
+  "labels": ["dependencies"]
+}
