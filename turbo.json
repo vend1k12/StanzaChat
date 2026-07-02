@@ -1,6 +1,15 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
+  "globalEnv": [
+    "CI",
+    "DATABASE_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "ENCRYPTION_MASTER_KEY",
+    "NODE_ENV",
+    "PORT"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -15,6 +24,19 @@
     },
     "test": {
       "dependsOn": []
+    },
+    "test:integration": {
+      "dependsOn": []
+    },
+    "test:e2e": {
+      "dependsOn": ["build", "^build"],
+      "cache": false
+    },
+    "db:generate": {
+      "dependsOn": []
+    },
+    "db:migrate": {
+      "dependsOn": ["^db:generate"]
     },
     "dev": {
       "cache": false,

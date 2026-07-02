@@ -1,0 +1,36 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "next build",
+    "check-types": "tsc --noEmit",
+    "dev": "next dev",
+    "lint": "eslint . --max-warnings=0",
+    "start": "next start",
+    "test": "echo \"web: no unit tests (E2E covers Phase 1 auth smoke)\" && exit 0",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@repo/auth": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/shared": "workspace:*",
+    "better-auth": "^1.2.9",
+    "next": "^15.5.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/bun": "^1.3.2",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@playwright/test": "^1.54.0",
+    "eslint": "^9.39.1",
+    "typescript": "5.9.2"
+  }
+}

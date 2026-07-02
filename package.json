@@ -11,6 +11,10 @@
     "format:check": "prettier --check .",
     "check-types": "turbo run check-types",
     "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "turbo run test:e2e",
+    "db:migrate": "turbo run db:migrate",
+    "db:generate": "turbo run db:generate",
     "changeset": "changeset"
   },
   "devDependencies": {
