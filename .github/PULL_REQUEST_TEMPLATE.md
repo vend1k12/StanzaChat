@@ -28,7 +28,7 @@ Closes #
 
 ## Definition of Done checklist
 
-Mirrors `docs/processes/development.md` §"Definition of Done". Tick every box or explain why it does not apply.
+Mirrors `docs/processes/development.md` §"Definition of Done" and §"Review policy". Tick every box or explain why it does not apply.
 
 - [ ] Behavior matches `SPEC.MD` (or SPEC was updated in this PR for an approved scope change).
 - [ ] Tests exist per the matrix in `docs/agents/workflow.md` and pass locally on touched packages.
@@ -38,7 +38,12 @@ Mirrors `docs/processes/development.md` §"Definition of Done". Tick every box o
 - [ ] For UI changes: screenshot or short clip attached below.
 - [ ] For security-sensitive areas (sandbox, crypto, authz, migrations): guardrails from `docs/agents/guardrails.md` explicitly considered and listed below.
 - [ ] All commits are signed off (DCO): `git commit -s`.
+- [ ] Review evidence is attached: human review, AI review artifact/check, or solo-maintainer review note per `docs/processes/development.md`.
 - [ ] PR title follows Conventional Commits and squash-merge will produce a valid release-please commit.
+
+## Review evidence
+
+<!-- Required before merge. In solo-maintainer mode, link an AI review artifact/check or write a maintainer review note explaining why this is trivial and CI/security checks are sufficient. -->
 
 ## Guardrails considered
 
