@@ -3,9 +3,8 @@ updates:
   - package-ecosystem: npm
     directory: "/"
     schedule:
-      interval: weekly
-      day: monday
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     cooldown:
       default-days: 7
     commit-message:
@@ -15,24 +14,31 @@ updates:
       - dependencies
       - npm
     groups:
-      npm-minor-and-patch:
+      npm-tooling-minor-and-patch:
+        patterns:
+          - "*"
         applies-to: version-updates
         update-types:
           - minor
           - patch
       npm-security:
+        patterns:
+          - "*"
         applies-to: security-updates
         update-types:
           - patch
           - minor
           - major
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
-      day: monday
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     cooldown:
       default-days: 7
     commit-message:
@@ -43,7 +49,13 @@ updates:
       - github-actions
     groups:
       github-actions-minor-and-patch:
+        patterns:
+          - "*"
         applies-to: version-updates
         update-types:
           - minor
           - patch
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
