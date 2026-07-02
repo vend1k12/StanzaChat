@@ -20,7 +20,8 @@
   "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
     "labels": ["dependencies", "security"],
-    "commitMessagePrefix": "fix(repo)",
+    "semanticCommitType": "fix",
+    "semanticCommitScope": "repo",
     "schedule": ["at any time"],
     "minimumReleaseAge": "0 days",
     "dependencyDashboardApproval": false
@@ -36,7 +37,6 @@
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "npm minor and patch",
-      "commitMessagePrefix": "chore(repo)",
       "semanticCommitType": "chore",
       "semanticCommitScope": "repo",
       "labels": ["dependencies", "npm"]
@@ -46,7 +46,6 @@
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true,
-      "commitMessagePrefix": "chore(repo)",
       "semanticCommitType": "chore",
       "semanticCommitScope": "repo",
       "labels": ["dependencies", "npm", "major"]
@@ -56,7 +55,6 @@
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "github-actions minor and patch",
-      "commitMessagePrefix": "ci",
       "semanticCommitType": "ci",
       "semanticCommitScope": "",
       "labels": ["dependencies", "github-actions"]
@@ -66,7 +64,6 @@
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true,
-      "commitMessagePrefix": "ci",
       "semanticCommitType": "ci",
       "semanticCommitScope": "",
       "labels": ["dependencies", "github-actions", "major"]
