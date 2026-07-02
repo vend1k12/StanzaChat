@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Transpile workspace packages so Next.js resolves `.js` import
   // specifiers (NodeNext convention) to their `.ts` source files.
-  transpilePackages: ["@repo/auth", "@repo/db", "@repo/shared"],
+  transpilePackages: ["@repo/ai", "@repo/auth", "@repo/db", "@repo/shared"],
   // Node runtime for all API routes (SPEC §5.1: Route Handlers run on Node runtime).
   // Next.js standalone output for Docker builds (Phase 5).
   output: "standalone",
