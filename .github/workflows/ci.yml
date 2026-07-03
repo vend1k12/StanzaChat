@@ -189,6 +189,36 @@ jobs:
     name: E2E tests
     runs-on: ubuntu-latest
     needs: [build]
+    # Postgres + env are only needed when Playwright is actually run, but
+    # GitHub Actions services start unconditionally on the job, so we only
+    # declare them here when the guard would fire. We can't gate `services:`
+    # on a step output, so we keep the service always-on for the e2e job —
+    # it's cheap relative to the browser run.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: stanzachat
+          POSTGRES_PASSWORD: stanzachat
+          POSTGRES_DB: stanzachat
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stanzachat -d stanzachat"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://stanzachat:stanzachat@localhost:5432/stanzachat
+      # Non-production test run: default-looking secrets are accepted by the
+      # env schema (guardrail #4 only rejects defaults in production), so we
+      # use fixed values that satisfy the format constraints (≥ 32 chars /
+      # base64 32 bytes) without requiring configured CI secrets.
+      BETTER_AUTH_SECRET: test-secret-test-secret-test-secret-test-secret-0
+      BETTER_AUTH_URL: http://localhost:3000
+      ENCRYPTION_MASTER_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      E2E_MOCK_PROVIDER: "1"
+      NODE_ENV: test
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -219,6 +249,10 @@ jobs:
       - name: Install dependencies
         if: steps.guard.outputs.has_targets == '1'
         run: bun install --frozen-lockfile
+
+      - name: Push DB schema
+        if: steps.guard.outputs.has_targets == '1'
+        run: bun run db:push
 
       - name: Install Playwright browsers
         if: steps.guard.outputs.has_targets == '1'

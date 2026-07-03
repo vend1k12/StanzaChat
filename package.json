@@ -15,6 +15,7 @@
     "test:e2e": "turbo run test:e2e",
     "db:migrate": "turbo run db:migrate",
     "db:generate": "turbo run db:generate",
+    "db:push": "turbo run db:push",
     "changeset": "changeset"
   },
   "devDependencies": {

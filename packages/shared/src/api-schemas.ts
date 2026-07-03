@@ -32,6 +32,22 @@ export const chatMessageSchema = z.object({
 });
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 
+/**
+ * Body of `POST /api/chat` when the client uses Vercel AI SDK
+ * `useChat` (SPEC §5.1 + docs/agents/architecture.md "Streaming").
+ *
+ * `messages` is passed through to `convertToModelMessages(...)` before
+ * `streamText(...)`; the AI SDK owns UIMessage validation, so we only
+ * verify the outer shape here.  `chatId` is our own ULID and must be
+ * strictly a non-empty string — the route handler then re-checks
+ * ownership via `getChat(scope, id)`.
+ */
+export const chatStreamSchema = z.object({
+  chatId: z.string().min(1),
+  messages: z.array(z.unknown()).min(1),
+});
+export type ChatStream = z.infer<typeof chatStreamSchema>;
+
 // ── Admin providers ─────────────────────────────────────────────────
 
 export const createProviderSchema = z.object({

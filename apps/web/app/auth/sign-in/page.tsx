@@ -1,44 +1,23 @@
-import Link from "next/link";
+import { Suspense } from "react";
+
+import { SignInForm } from "./sign-in-form";
 
 export const metadata = { title: "Sign in — StanzaChat" };
 
+/**
+ * `/auth/sign-in` — server shell that renders the client-side sign-in form
+ * (Better-Auth flow via `authClient.signIn.email`).
+ *
+ * `<Suspense>` wraps the form because it reads `useSearchParams()`, which
+ * would otherwise bail out static prerender at build time
+ * (https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout).
+ */
 export default function SignInPage() {
   return (
-    <main style={{ padding: "2rem", maxWidth: 400, margin: "0 auto" }}>
-      <h1>Sign in</h1>
-      <form
-        action="/api/auth/sign-in/email"
-        method="POST"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-          marginTop: "1.5rem",
-        }}
-      >
-        <label>
-          Email
-          <input
-            name="email"
-            type="email"
-            required
-            style={{ display: "block", width: "100%" }}
-          />
-        </label>
-        <label>
-          Password
-          <input
-            name="password"
-            type="password"
-            required
-            style={{ display: "block", width: "100%" }}
-          />
-        </label>
-        <button type="submit">Sign in</button>
-      </form>
-      <p style={{ marginTop: "1.5rem" }}>
-        No account? <Link href="/auth/sign-up">Sign up</Link>
-      </p>
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center p-6">
+      <Suspense>
+        <SignInForm />
+      </Suspense>
     </main>
   );
 }

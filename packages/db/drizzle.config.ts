@@ -8,6 +8,13 @@ if (!databaseUrl) {
 
 export default defineConfig({
   dialect: "postgresql",
+  // SPEC §4 / schema.ts header: table/column names are snake_case even
+  // though Drizzle objects use camelCase keys. Without this, `db:push`
+  // materialises camelCase columns (e.g. `emailVerified`) that don't
+  // match the snake_case SQL Better-Auth generates (`email_verified`),
+  // breaking signup. `casing: "snake_case"` makes Drizzle map camelCase
+  // keys → snake_case column names consistently across the schema.
+  casing: "snake_case",
   dbCredentials: {
     url: databaseUrl,
   },

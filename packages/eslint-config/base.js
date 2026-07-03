@@ -30,10 +30,10 @@ import tseslint from "typescript-eslint";
  * - `eslint-plugin-drizzle` lives in a dedicated `./drizzle` export
  *   (see drizzle.js) so packages that never touch Drizzle do not pay
  *   the peer-rule cost; `packages/db` will opt in when it lands.
- * - `eslint-plugin-tailwindcss` is deliberately deferred to Phase 3
- *   when the Tailwind v4 CSS entrypoint exists. The plugin requires a
- *   real `settings.tailwindcss.cssConfigPath` and cannot be enabled
- *   with a placeholder.
+ * - `eslint-plugin-tailwindcss` is enabled in the `next-js` preset
+ *   (see next.js) because it needs a `settings.tailwindcss.cssConfigPath`
+ *   pointing at the Tailwind v4 CSS entrypoint (`apps/web/app/globals.css`).
+ *   Packages that never emit UI classnames don't pay the peer-rule cost.
  *
  * @type {import("eslint").Linter.Config[]}
  */

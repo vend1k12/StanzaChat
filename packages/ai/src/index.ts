@@ -11,6 +11,7 @@ export {
   type KeyStore,
   maskApiKey,
 } from "./crypto/index.js";
+export { createMockModel } from "./mock-provider.js";
 export {
   createProvider,
   type CreateProviderInput,

@@ -1,8 +1,7 @@
-import { deleteChat, getChat, getDb, updateChat } from "@repo/db";
-import { parseEnv, updateChatSchema } from "@repo/shared";
-import { headers } from "next/headers";
+import { deleteChat, getChat, updateChat } from "@repo/db";
+import { updateChatSchema } from "@repo/shared";
 
-import { getAuth } from "@/lib/auth";
+import { requireSessionScope } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,35 +10,17 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    return Response.json(
-      { error: { code: "unauthorized", message: "Authentication required" } },
-      { status: 401 },
-    );
-  }
+  const ctx = await requireSessionScope();
+  if (ctx instanceof Response) return ctx;
 
   const { id } = await params;
-  const db = getDb(parseEnv().DATABASE_URL);
-  const chat = await getChat(
-    db,
-    {
-      userId: session.user.id,
-      organizationId: "",
-      workspaceId: "",
-    },
-    id,
-  );
-
+  const chat = await getChat(ctx.db, ctx.scope, id);
   if (!chat) {
     return Response.json(
       { error: { code: "not_found", message: "Chat not found" } },
       { status: 404 },
     );
   }
-
   return Response.json({ chat });
 }
 
@@ -47,20 +28,12 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    return Response.json(
-      { error: { code: "unauthorized", message: "Authentication required" } },
-      { status: 401 },
-    );
-  }
+  const ctx = await requireSessionScope();
+  if (ctx instanceof Response) return ctx;
 
   const { id } = await params;
   const body = await request.json();
   const parsed = updateChatSchema.safeParse(body);
-
   if (!parsed.success) {
     return Response.json(
       { error: { code: "validation_error", message: parsed.error.message } },
@@ -68,18 +41,7 @@ export async function PATCH(
     );
   }
 
-  const db = getDb(parseEnv().DATABASE_URL);
-  await updateChat(
-    db,
-    {
-      userId: session.user.id,
-      organizationId: "",
-      workspaceId: "",
-    },
-    id,
-    parsed.data,
-  );
-
+  await updateChat(ctx.db, ctx.scope, id, parsed.data);
   return Response.json({ ok: true });
 }
 
@@ -87,27 +49,10 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    return Response.json(
-      { error: { code: "unauthorized", message: "Authentication required" } },
-      { status: 401 },
-    );
-  }
+  const ctx = await requireSessionScope();
+  if (ctx instanceof Response) return ctx;
 
   const { id } = await params;
-  const db = getDb(parseEnv().DATABASE_URL);
-  await deleteChat(
-    db,
-    {
-      userId: session.user.id,
-      organizationId: "",
-      workspaceId: "",
-    },
-    id,
-  );
-
+  await deleteChat(ctx.db, ctx.scope, id);
   return Response.json({ ok: true });
 }

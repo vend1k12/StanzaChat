@@ -50,10 +50,26 @@ export const envSchema = z
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    /**
+     * E2E-only flag: when `"1"`, the provider registry substitutes an
+     * offline mock `LanguageModel` so Playwright can round-trip
+     * `/api/chat` (SPEC §5.1 + §10 Phase 3 done-when) without any
+     * external LLM. Rejected below when NODE_ENV is `production`.
+     */
+    E2E_MOCK_PROVIDER: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.NODE_ENV !== "production") {
       return;
+    }
+
+    if (data.E2E_MOCK_PROVIDER === "1") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["E2E_MOCK_PROVIDER"],
+        message:
+          "E2E_MOCK_PROVIDER must not be enabled in production (it wires an offline mock LLM).",
+      });
     }
 
     if (isDefaultValue(data.BETTER_AUTH_SECRET)) {
