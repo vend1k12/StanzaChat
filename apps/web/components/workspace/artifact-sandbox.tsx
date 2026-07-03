@@ -3,6 +3,8 @@
 import type { ArtifactType } from "@repo/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { acceptSandboxMessage } from "@/lib/sandbox-message";
+
 /**
  * Artifact preview sandbox (SPEC §5.3, guardrails #1-2).
  *
@@ -98,14 +100,6 @@ const BOOTSTRAP = `<!doctype html>
 </body>
 </html>`;
 
-// ── Wire format ───────────────────────────────────────────────────────
-
-interface SandboxMessage {
-  __stz__: true;
-  token: string | null;
-  type: "ready" | "rendered";
-}
-
 interface RenderPayload {
   __stz__: true;
   token: string;
@@ -157,19 +151,22 @@ export function ArtifactSandbox({
     if (ready) postRender();
   }, [postRender, ready]);
 
-  // Parent-side message gate: drop anything that doesn't come from our
-  // iframe AND carry our token. This is the guardrail that makes
-  // spoofing the channel impossible.
+  // Parent-side message gate. All three guards (event.source, __stz__
+  // marker, mount-scoped token) live in `lib/sandbox-message.ts` so the
+  // decision logic is unit-tested without a DOM.
   useEffect(() => {
     function onMessage(event: MessageEvent) {
-      const data = event.data as SandboxMessage | undefined;
-      if (!data || data.__stz__ !== true) return;
-      if (event.source !== iframeRef.current?.contentWindow) return;
-      if (data.token !== tokenRef.current) return;
+      const msg = acceptSandboxMessage(
+        event.data,
+        event.source,
+        iframeRef.current?.contentWindow ?? null,
+        tokenRef.current,
+      );
+      if (!msg) return;
 
-      if (data.type === "ready") {
+      if (msg.type === "ready") {
         setReady(true);
-      } else if (data.type === "rendered") {
+      } else if (msg.type === "rendered") {
         const wrapper = wrapperRef.current;
         if (wrapper) wrapper.dataset.rendered = "true";
       }

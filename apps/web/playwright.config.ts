@@ -7,11 +7,17 @@ import { defineConfig, devices } from "@playwright/test";
  * and `next dev` locally. `PORT` (default 3000) drives both the Next.js
  * process and the URL Playwright waits on, so a local run can pick a free
  * port by exporting `PORT=<n>` — useful when 3000 is taken by another app.
+ *
+ * Note: `next.config.ts` sets `output: "standalone"` for Phase 5 Docker
+ * builds. `next start` emits a warning about that combination but still
+ * serves the app correctly; a Phase 5 follow-up will switch the E2E
+ * server to the standalone entrypoint alongside proper asset copying.
  */
 const port = process.env.PORT ?? "3000";
 const baseURL = process.env.BETTER_AUTH_URL ?? `http://localhost:${port}`;
 
 export default defineConfig({
+  globalSetup: "./e2e/global.setup.ts",
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
