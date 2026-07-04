@@ -94,8 +94,11 @@ describe("renderSandboxMarkdown — sandbox pipeline invariant", () => {
     let html = content;
     for (const step of steps) {
       // Steps come from MARKDOWN_STEPS_JSON — module-owned test data.
-      // eslint-disable-next-line security/detect-non-literal-regexp
-      html = html.replace(new RegExp(step.pattern, step.flags), step.replacement);
+      html = html.replace(
+        // eslint-disable-next-line security/detect-non-literal-regexp
+        new RegExp(step.pattern, step.flags),
+        step.replacement,
+      );
     }
     return `<p>${html}</p>`;
   }

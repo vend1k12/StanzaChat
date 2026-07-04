@@ -6,7 +6,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import type { ExtractTablesWithRelations } from "drizzle-orm/relations";
 import { Pool } from "pg";
 
-import { type Schema,schema } from "./schema.js";
+import { type Schema, schema } from "./schema.js";
 
 /**
  * Concrete Drizzle database client used by every data-access function.
@@ -21,7 +21,10 @@ export type Db = NodePgDatabase<Schema>;
  * The transaction handle Drizzle hands to the callback of `db.transaction`.
  * Structurally the same query builder as `Db`, plus rollback/commit hooks.
  */
-export type DbTx = NodePgTransaction<Schema, ExtractTablesWithRelations<Schema>>;
+export type DbTx = NodePgTransaction<
+  Schema,
+  ExtractTablesWithRelations<Schema>
+>;
 
 /**
  * Accepts either a top-level `Db` or an in-flight transaction `DbTx`.

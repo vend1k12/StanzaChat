@@ -39,7 +39,11 @@ export const MARKDOWN_STEPS: readonly MarkdownStep[] = [
   { pattern: "^### (.*)$", flags: "gm", replacement: "<h3>$1</h3>" },
   { pattern: "^## (.*)$", flags: "gm", replacement: "<h2>$1</h2>" },
   { pattern: "^# (.*)$", flags: "gm", replacement: "<h1>$1</h1>" },
-  { pattern: "\\*\\*(.+?)\\*\\*", flags: "g", replacement: "<strong>$1</strong>" },
+  {
+    pattern: "\\*\\*(.+?)\\*\\*",
+    flags: "g",
+    replacement: "<strong>$1</strong>",
+  },
   { pattern: "`(.+?)`", flags: "g", replacement: "<code>$1</code>" },
   { pattern: "\\n\\n", flags: "g", replacement: "</p><p>" },
   { pattern: "\\n", flags: "g", replacement: "<br>" },

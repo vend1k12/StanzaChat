@@ -1,10 +1,6 @@
 import type { Db, TenantScope } from "@repo/db";
 import { getDb, getDefaultWorkspaceForUser } from "@repo/db";
-import {
-  ForbiddenError,
-  parseEnv,
-  UnauthorizedError,
-} from "@repo/shared";
+import { ForbiddenError, parseEnv, UnauthorizedError } from "@repo/shared";
 import { headers } from "next/headers";
 
 import { getAuth } from "@/lib/auth";

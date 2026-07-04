@@ -33,7 +33,11 @@ export async function createChat(
   return id;
 }
 
-export async function getChat(db: DbClient, scope: TenantScope, chatId: string) {
+export async function getChat(
+  db: DbClient,
+  scope: TenantScope,
+  chatId: string,
+) {
   const [chat] = await db
     .select()
     .from(chats)
@@ -82,7 +86,11 @@ export async function deleteChat(
     .where(and(eq(chats.id, chatId), eq(chats.userId, scope.userId)));
 }
 
-export async function listMessages(db: DbClient, scope: TenantScope, chatId: string) {
+export async function listMessages(
+  db: DbClient,
+  scope: TenantScope,
+  chatId: string,
+) {
   // Verify chat belongs to user first
   const chat = await getChat(db, scope, chatId);
   if (!chat) return undefined;
