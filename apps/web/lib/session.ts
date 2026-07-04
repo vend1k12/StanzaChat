@@ -1,6 +1,10 @@
 import type { Db, TenantScope } from "@repo/db";
 import { getDb, getDefaultWorkspaceForUser } from "@repo/db";
-import { parseEnv } from "@repo/shared";
+import {
+  ForbiddenError,
+  parseEnv,
+  UnauthorizedError,
+} from "@repo/shared";
 import { headers } from "next/headers";
 
 import { getAuth } from "@/lib/auth";
@@ -59,18 +63,29 @@ export function getDbFromEnv(): Db {
 
 // ── Session ────────────────────────────────────────────────────────────
 
-export type Session = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getAuth>["api"]["getSession"]>>
->;
+/**
+ * Minimal fields we consume from the Better-Auth session at request
+ * time. Named locally so we don't couple to
+ * `ReturnType<typeof getAuth>["api"]["getSession"]` — an anti-pattern
+ * per `docs/agents/conventions.md`; also lets test fixtures construct
+ * the shape without pulling in the whole Better-Auth types graph.
+ */
+export interface Session {
+  session: { id: string; userId: string };
+  user: { id: string; email: string; name: string; role: string };
+}
 
 /**
  * Fetch the current Better-Auth session from request headers. Returns
  * `null` if the user is not signed in — callers typically short-circuit
- * with `authErrorResponses.unauthorized()`.
+ * with `authErrorResponses.unauthorized()` (composable via
+ * `requireSessionScope`) or `throw new UnauthorizedError()` (composable
+ * via `requireSessionScopeOrThrow` + `wrapRoute`).
  */
 export async function getSession(): Promise<Session | null> {
   const auth = getAuth();
-  return auth.api.getSession({ headers: await headers() });
+  const raw = await auth.api.getSession({ headers: await headers() });
+  return (raw as Session | null) ?? null;
 }
 
 // ── Scope ──────────────────────────────────────────────────────────────
@@ -82,25 +97,47 @@ export async function getSession(): Promise<Session | null> {
  * (should only happen if the hook failed), we surface a distinct error
  * rather than silently downgrading to bare-id queries.
  */
+// In-process scope memo keyed by `userId`. In v0.1 every user has
+// exactly one personal org + one default workspace, so this is safe
+// to cache for the lifetime of the request-handling process. Purge
+// with `resetResolveScopeCache()` when workspace/org membership
+// changes (only used at first-run + org-invite acceptance today).
+const scopeCache = new Map<string, TenantScope>();
+
+export function resetResolveScopeCache(userId?: string): void {
+  if (userId) scopeCache.delete(userId);
+  else scopeCache.clear();
+}
+
 export async function resolveScope(
   db: Db,
   userId: string,
 ): Promise<TenantScope | null> {
+  const cached = scopeCache.get(userId);
+  if (cached) return cached;
+
   const target = await getDefaultWorkspaceForUser(db, userId);
   if (!target) {
     return null;
   }
-  return {
+  const scope: TenantScope = {
     userId,
     organizationId: target.organizationId,
     workspaceId: target.workspaceId,
   };
+  scopeCache.set(userId, scope);
+  return scope;
 }
 
 /**
  * Composite convenience for handlers: session + db + scope in one call.
  * Returns either a ready-to-use context or a JSON `Response` to return.
  * Handlers can `if (ctx instanceof Response) return ctx;` on the result.
+ *
+ * NEW code should prefer `requireSessionScopeOrThrow` inside a
+ * `wrapRoute(async () => …)` block per `docs/agents/conventions.md`.
+ * This return-a-Response form is retained for the auth-bypass paths
+ * (e.g. Better-Auth's own routes) that cannot rely on the mapper.
  */
 export async function requireSessionScope(): Promise<
   { session: Session; db: Db; scope: TenantScope } | Response
@@ -115,4 +152,55 @@ export async function requireSessionScope(): Promise<
     return authErrorResponses.scopeMissing();
   }
   return { session, db, scope };
+}
+
+/**
+ * Throwing variant of `requireSessionScope` — pairs with `wrapRoute`
+ * (see `docs/agents/conventions.md` "Error handling"). Throws typed
+ * `UnauthorizedError` when no session cookie, or a service error when
+ * the user's default workspace is missing.
+ */
+export async function requireSessionScopeOrThrow(): Promise<{
+  session: Session;
+  db: Db;
+  scope: TenantScope;
+}> {
+  const session = await getSession();
+  if (!session) {
+    throw new UnauthorizedError();
+  }
+  const db = getDbFromEnv();
+  const scope = await resolveScope(db, session.user.id);
+  if (!scope) {
+    throw new ForbiddenError(
+      "Default workspace is missing for this user. Sign out and back in to trigger first-run setup.",
+    );
+  }
+  return { session, db, scope };
+}
+
+/**
+ * Throwing gate for instance-admin-only routes (provider CRUD, etc.).
+ * Reuses `requireSessionScopeOrThrow`'s error taxonomy so `wrapRoute`
+ * maps rejections to the right status without per-route branching.
+ * The permission check runs through `@repo/auth`'s central `can(...)`
+ * helper (guardrails #7 — no ad-hoc role reads).
+ */
+export async function requireInstanceAdmin(): Promise<{
+  session: Session;
+  db: Db;
+}> {
+  const session = await getSession();
+  if (!session) {
+    throw new UnauthorizedError();
+  }
+  const { can } = await import("@repo/auth");
+  const permitted = can(
+    { instanceRole: session.user.role as "admin" | "user" },
+    "provider.manage",
+  );
+  if (!permitted) {
+    throw new ForbiddenError("Instance admin required");
+  }
+  return { session, db: getDbFromEnv() };
 }

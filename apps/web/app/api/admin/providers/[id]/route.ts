@@ -4,12 +4,15 @@ import {
   getProvider,
   updateProvider,
 } from "@repo/ai";
-import { can } from "@repo/auth";
-import { getDb } from "@repo/db";
-import { parseEnv, updateProviderSchema } from "@repo/shared";
-import { headers } from "next/headers";
+import {
+  NotFoundError,
+  parseEnv,
+  updateProviderSchema,
+  ValidationError,
+} from "@repo/shared";
 
-import { getAuth } from "@/lib/auth";
+import { wrapRoute } from "@/lib/http";
+import { requireInstanceAdmin } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,130 +21,59 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    return Response.json(
-      { error: { code: "unauthorized", message: "Authentication required" } },
-      { status: 401 },
-    );
-  }
-
-  if (
-    !can(
-      { instanceRole: session.user.role as "admin" | "user" },
-      "provider.manage",
-    )
-  ) {
-    return Response.json(
-      { error: { code: "forbidden", message: "Instance admin required" } },
-      { status: 403 },
-    );
-  }
-
-  const { id } = await params;
-  const db = getDb(parseEnv().DATABASE_URL);
-  const provider = await getProvider(db, id);
-
-  if (!provider) {
-    return Response.json(
-      { error: { code: "not_found", message: "Provider not found" } },
-      { status: 404 },
-    );
-  }
-
-  return Response.json({ provider });
+  return wrapRoute(async () => {
+    const ctx = await requireInstanceAdmin();
+    const { id } = await params;
+    const provider = await getProvider(ctx.db, id);
+    if (!provider) {
+      throw new NotFoundError("Provider", id);
+    }
+    return Response.json({ provider });
+  });
 }
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
+  return wrapRoute(async () => {
+    const ctx = await requireInstanceAdmin();
+    const { id } = await params;
 
-  if (!session) {
-    return Response.json(
-      { error: { code: "unauthorized", message: "Authentication required" } },
-      { status: 401 },
-    );
-  }
+    const body = await request.json();
+    const parsed = updateProviderSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new ValidationError(parsed.error.message);
+    }
 
-  if (
-    !can(
-      { instanceRole: session.user.role as "admin" | "user" },
-      "provider.manage",
-    )
-  ) {
-    return Response.json(
-      { error: { code: "forbidden", message: "Instance admin required" } },
-      { status: 403 },
-    );
-  }
+    // Encrypt API key if provided
+    let encryptedApiKey;
+    if (parsed.data.apiKey) {
+      const keyStore = new AesGcmKeyStore(parseEnv().ENCRYPTION_MASTER_KEY);
+      encryptedApiKey = await keyStore.encrypt(parsed.data.apiKey);
+    }
 
-  const { id } = await params;
-  const body = await request.json();
-  const parsed = updateProviderSchema.safeParse(body);
+    await updateProvider(ctx.db, id, {
+      label: parsed.data.label,
+      baseUrl: parsed.data.baseUrl || undefined,
+      encryptedApiKey,
+      enabledModels: parsed.data.enabledModels,
+      isDefault: parsed.data.isDefault,
+      enabled: parsed.data.enabled,
+    });
 
-  if (!parsed.success) {
-    return Response.json(
-      { error: { code: "validation_error", message: parsed.error.message } },
-      { status: 400 },
-    );
-  }
-
-  const env = parseEnv();
-  const db = getDb(env.DATABASE_URL);
-
-  // Encrypt API key if provided
-  let encryptedApiKey;
-  if (parsed.data.apiKey) {
-    const keyStore = new AesGcmKeyStore(env.ENCRYPTION_MASTER_KEY);
-    encryptedApiKey = await keyStore.encrypt(parsed.data.apiKey);
-  }
-
-  await updateProvider(db, id, {
-    label: parsed.data.label,
-    baseUrl: parsed.data.baseUrl || undefined,
-    encryptedApiKey,
-    enabledModels: parsed.data.enabledModels,
-    isDefault: parsed.data.isDefault,
-    enabled: parsed.data.enabled,
+    return Response.json({ ok: true });
   });
-
-  return Response.json({ ok: true });
 }
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    return Response.json(
-      { error: { code: "unauthorized", message: "Authentication required" } },
-      { status: 401 },
-    );
-  }
-
-  if (
-    !can(
-      { instanceRole: session.user.role as "admin" | "user" },
-      "provider.manage",
-    )
-  ) {
-    return Response.json(
-      { error: { code: "forbidden", message: "Instance admin required" } },
-      { status: 403 },
-    );
-  }
-
-  const { id } = await params;
-  const db = getDb(parseEnv().DATABASE_URL);
-  await deleteProvider(db, id);
-
-  return Response.json({ ok: true });
+  return wrapRoute(async () => {
+    const ctx = await requireInstanceAdmin();
+    const { id } = await params;
+    await deleteProvider(ctx.db, id);
+    return Response.json({ ok: true });
+  });
 }

@@ -1,11 +1,16 @@
 import { persistAssistantTurn, resolveChatModel } from "@repo/ai";
 import { getChat, saveMessage } from "@repo/db";
-import { chatStreamSchema, parseEnv, ValidationError } from "@repo/shared";
+import {
+  chatStreamSchema,
+  NotFoundError,
+  parseEnv,
+  ValidationError,
+} from "@repo/shared";
 import type { LanguageModel, UIMessage } from "ai";
 import { convertToModelMessages, streamText } from "ai";
 
 import { wrapRoute } from "@/lib/http";
-import { requireSessionScope } from "@/lib/session";
+import { requireSessionScopeOrThrow } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,12 +48,11 @@ export async function POST(request: Request) {
     const { chatId, messages } = parsed.data;
     const uiMessages = messages as UIMessage[];
 
-    const ctx = await requireSessionScope();
-    if (ctx instanceof Response) return ctx;
+    const ctx = await requireSessionScopeOrThrow();
 
     const chat = await getChat(ctx.db, ctx.scope, chatId);
     if (!chat) {
-      throw new ValidationError("Chat not found", "not_found");
+      throw new NotFoundError("Chat", chatId);
     }
 
     const lastUser = findLastUserMessage(uiMessages);

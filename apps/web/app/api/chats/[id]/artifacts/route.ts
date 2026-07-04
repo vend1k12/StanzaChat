@@ -1,6 +1,8 @@
 import { listArtifactsForChat } from "@repo/db";
+import { NotFoundError } from "@repo/shared";
 
-import { requireSessionScope } from "@/lib/session";
+import { wrapRoute } from "@/lib/http";
+import { requireSessionScopeOrThrow } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,16 +11,13 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await requireSessionScope();
-  if (ctx instanceof Response) return ctx;
-
-  const { id } = await params;
-  const artifacts = await listArtifactsForChat(ctx.db, ctx.scope, id);
-  if (artifacts === undefined) {
-    return Response.json(
-      { error: { code: "not_found", message: "Chat not found" } },
-      { status: 404 },
-    );
-  }
-  return Response.json({ artifacts });
+  return wrapRoute(async () => {
+    const ctx = await requireSessionScopeOrThrow();
+    const { id } = await params;
+    const artifacts = await listArtifactsForChat(ctx.db, ctx.scope, id);
+    if (artifacts === undefined) {
+      throw new NotFoundError("Chat", id);
+    }
+    return Response.json({ artifacts });
+  });
 }
