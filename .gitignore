@@ -39,3 +39,11 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Session-local tooling
+.codegraph/
+.cursor/
+.rpiv/
+
+# Drizzle-kit auto-generated migration snapshots (dev only; prod uses SQL files)
+packages/*/migrations/
