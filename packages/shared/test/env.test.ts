@@ -66,4 +66,29 @@ describe("env schema", () => {
   it("parseEnv throws on invalid env", () => {
     expect(() => parseEnv({})).toThrow(/Environment validation failed/);
   });
+
+  it("allows E2E_MOCK_PROVIDER=1 in development/test", () => {
+    const dev = safeParseEnv({
+      ...VALID_ENV,
+      E2E_MOCK_PROVIDER: "1",
+      NODE_ENV: "development",
+    });
+    expect(dev.success).toBe(true);
+
+    const test = safeParseEnv({
+      ...VALID_ENV,
+      E2E_MOCK_PROVIDER: "1",
+      NODE_ENV: "test",
+    });
+    expect(test.success).toBe(true);
+  });
+
+  it("rejects E2E_MOCK_PROVIDER=1 in production", () => {
+    const result = safeParseEnv({
+      ...VALID_ENV,
+      E2E_MOCK_PROVIDER: "1",
+      NODE_ENV: "production",
+    });
+    expect(result.success).toBe(false);
+  });
 });

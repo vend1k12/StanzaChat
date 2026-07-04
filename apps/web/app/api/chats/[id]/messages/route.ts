@@ -1,8 +1,8 @@
-import { getDb, listMessages } from "@repo/db";
-import { parseEnv } from "@repo/shared";
-import { headers } from "next/headers";
+import { listMessages } from "@repo/db";
+import { NotFoundError } from "@repo/shared";
 
-import { getAuth } from "@/lib/auth";
+import { wrapRoute } from "@/lib/http";
+import { requireSessionScopeOrThrow } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,34 +11,13 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    return Response.json(
-      { error: { code: "unauthorized", message: "Authentication required" } },
-      { status: 401 },
-    );
-  }
-
-  const { id } = await params;
-  const db = getDb(parseEnv().DATABASE_URL);
-  const messages = await listMessages(
-    db,
-    {
-      userId: session.user.id,
-      organizationId: "",
-      workspaceId: "",
-    },
-    id,
-  );
-
-  if (messages === undefined) {
-    return Response.json(
-      { error: { code: "not_found", message: "Chat not found" } },
-      { status: 404 },
-    );
-  }
-
-  return Response.json({ messages });
+  return wrapRoute(async () => {
+    const ctx = await requireSessionScopeOrThrow();
+    const { id } = await params;
+    const messages = await listMessages(ctx.db, ctx.scope, id);
+    if (messages === undefined) {
+      throw new NotFoundError("Chat", id);
+    }
+    return Response.json({ messages });
+  });
 }

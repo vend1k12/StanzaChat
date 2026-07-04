@@ -1,4 +1,13 @@
 export {
+  createArtifactVersion,
+  getArtifact,
+  getArtifactVersion,
+  getLatestArtifactVersion,
+  listArtifactsForChat,
+  listArtifactVersions,
+  upsertArtifact,
+} from "./artifacts.js";
+export {
   createChat,
   deleteChat,
   getChat,
@@ -7,8 +16,20 @@ export {
   saveMessage,
   updateChat,
 } from "./chats.js";
-export { createDb, type Db, getDb, resetDbCache } from "./client.js";
-export { schema, type TenantScope } from "./schema.js";
+export {
+  createDb,
+  type Db,
+  type DbClient,
+  type DbTx,
+  getDb,
+  resetDbCache,
+} from "./client.js";
+export {
+  artifacts,
+  artifactVersions,
+  schema,
+  type TenantScope,
+} from "./schema.js";
 export {
   createPersonalOrgAndWorkspace,
   ensureInstanceSettings,

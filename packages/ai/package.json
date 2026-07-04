@@ -9,22 +9,24 @@
     "./crypto": "./src/crypto/index.ts",
     "./artifact-parser": "./src/artifact-parser.ts",
     "./provider-registry": "./src/provider-registry.ts",
-    "./model-config": "./src/model-config.ts"
+    "./model-config": "./src/model-config.ts",
+    "./mock-provider": "./src/mock-provider.ts"
   },
   "scripts": {
     "build": "tsc --build",
     "check-types": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
-    "test": "bun test test/artifact-parser.test.ts test/crypto.test.ts",
+    "test": "bun test test/artifact-parser.test.ts test/crypto.test.ts test/mock-provider.test.ts",
     "test:integration": "echo \"ai: integration tests run via apps/web chat round-trip\" && exit 0"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.6",
+    "@ai-sdk/google": "^4.0.7",
+    "@ai-sdk/openai": "^4.0.6",
+    "@ai-sdk/provider": "^4.0.1",
     "@repo/db": "workspace:*",
     "@repo/shared": "workspace:*",
     "ai": "^7.0.13",
-    "@ai-sdk/openai": "^4.0.6",
-    "@ai-sdk/anthropic": "^4.0.6",
-    "@ai-sdk/google": "^4.0.7",
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {

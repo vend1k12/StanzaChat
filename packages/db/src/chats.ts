@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 
-import type { Db } from "./client.js";
+import type { DbClient } from "./client.js";
 import type { TenantScope } from "./schema.js";
 import { chats, messages } from "./schema.js";
 import { createUlid } from "./slug.js";
@@ -13,7 +13,7 @@ import { createUlid } from "./slug.js";
  */
 
 export async function createChat(
-  db: Db,
+  db: DbClient,
   scope: TenantScope,
   input: {
     title?: string;
@@ -33,7 +33,11 @@ export async function createChat(
   return id;
 }
 
-export async function getChat(db: Db, scope: TenantScope, chatId: string) {
+export async function getChat(
+  db: DbClient,
+  scope: TenantScope,
+  chatId: string,
+) {
   const [chat] = await db
     .select()
     .from(chats)
@@ -41,7 +45,7 @@ export async function getChat(db: Db, scope: TenantScope, chatId: string) {
   return chat;
 }
 
-export async function listChats(db: Db, scope: TenantScope) {
+export async function listChats(db: DbClient, scope: TenantScope) {
   return db
     .select()
     .from(chats)
@@ -50,7 +54,7 @@ export async function listChats(db: Db, scope: TenantScope) {
 }
 
 export async function updateChat(
-  db: Db,
+  db: DbClient,
   scope: TenantScope,
   chatId: string,
   updates: {
@@ -73,7 +77,7 @@ export async function updateChat(
 }
 
 export async function deleteChat(
-  db: Db,
+  db: DbClient,
   scope: TenantScope,
   chatId: string,
 ): Promise<void> {
@@ -82,7 +86,11 @@ export async function deleteChat(
     .where(and(eq(chats.id, chatId), eq(chats.userId, scope.userId)));
 }
 
-export async function listMessages(db: Db, scope: TenantScope, chatId: string) {
+export async function listMessages(
+  db: DbClient,
+  scope: TenantScope,
+  chatId: string,
+) {
   // Verify chat belongs to user first
   const chat = await getChat(db, scope, chatId);
   if (!chat) return undefined;
@@ -95,7 +103,7 @@ export async function listMessages(db: Db, scope: TenantScope, chatId: string) {
 }
 
 export async function saveMessage(
-  db: Db,
+  db: DbClient,
   input: {
     chatId: string;
     role: "system" | "user" | "assistant";

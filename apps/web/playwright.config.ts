@@ -3,11 +3,21 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Playwright E2E configuration for StanzaChat.
  *
- * Phase 1 smoke test: auth pages render and forms are interactive.
- * The `webServer` starts the production Next.js server (`next start`)
- * after the build step has completed. Locally it starts `next dev`.
+ * The `webServer` starts the production Next.js server (`next start`) in CI
+ * and `next dev` locally. `PORT` (default 3000) drives both the Next.js
+ * process and the URL Playwright waits on, so a local run can pick a free
+ * port by exporting `PORT=<n>` — useful when 3000 is taken by another app.
+ *
+ * Note: `next.config.ts` sets `output: "standalone"` for Phase 5 Docker
+ * builds. `next start` emits a warning about that combination but still
+ * serves the app correctly; a Phase 5 follow-up will switch the E2E
+ * server to the standalone entrypoint alongside proper asset copying.
  */
+const port = process.env.PORT ?? "3000";
+const baseURL = process.env.BETTER_AUTH_URL ?? `http://localhost:${port}`;
+
 export default defineConfig({
+  globalSetup: "./e2e/global.setup.ts",
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
@@ -15,7 +25,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
-    baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+    baseURL,
     trace: "on-first-retry",
   },
   projects: [
@@ -26,7 +36,7 @@ export default defineConfig({
   ],
   webServer: {
     command: process.env.CI ? "bun run start" : "bun run dev",
-    url: "http://localhost:3000",
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },

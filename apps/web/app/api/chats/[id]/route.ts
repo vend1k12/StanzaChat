@@ -1,8 +1,8 @@
-import { deleteChat, getChat, getDb, updateChat } from "@repo/db";
-import { parseEnv, updateChatSchema } from "@repo/shared";
-import { headers } from "next/headers";
+import { deleteChat, getChat, updateChat } from "@repo/db";
+import { NotFoundError, updateChatSchema, ValidationError } from "@repo/shared";
 
-import { getAuth } from "@/lib/auth";
+import { wrapRoute } from "@/lib/http";
+import { requireSessionScopeOrThrow } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,103 +11,43 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    return Response.json(
-      { error: { code: "unauthorized", message: "Authentication required" } },
-      { status: 401 },
-    );
-  }
-
-  const { id } = await params;
-  const db = getDb(parseEnv().DATABASE_URL);
-  const chat = await getChat(
-    db,
-    {
-      userId: session.user.id,
-      organizationId: "",
-      workspaceId: "",
-    },
-    id,
-  );
-
-  if (!chat) {
-    return Response.json(
-      { error: { code: "not_found", message: "Chat not found" } },
-      { status: 404 },
-    );
-  }
-
-  return Response.json({ chat });
+  return wrapRoute(async () => {
+    const ctx = await requireSessionScopeOrThrow();
+    const { id } = await params;
+    const chat = await getChat(ctx.db, ctx.scope, id);
+    if (!chat) {
+      throw new NotFoundError("Chat", id);
+    }
+    return Response.json({ chat });
+  });
 }
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
+  return wrapRoute(async () => {
+    const ctx = await requireSessionScopeOrThrow();
+    const { id } = await params;
+    const body = await request.json();
+    const parsed = updateChatSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new ValidationError(parsed.error.message);
+    }
 
-  if (!session) {
-    return Response.json(
-      { error: { code: "unauthorized", message: "Authentication required" } },
-      { status: 401 },
-    );
-  }
-
-  const { id } = await params;
-  const body = await request.json();
-  const parsed = updateChatSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return Response.json(
-      { error: { code: "validation_error", message: parsed.error.message } },
-      { status: 400 },
-    );
-  }
-
-  const db = getDb(parseEnv().DATABASE_URL);
-  await updateChat(
-    db,
-    {
-      userId: session.user.id,
-      organizationId: "",
-      workspaceId: "",
-    },
-    id,
-    parsed.data,
-  );
-
-  return Response.json({ ok: true });
+    await updateChat(ctx.db, ctx.scope, id, parsed.data);
+    return Response.json({ ok: true });
+  });
 }
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    return Response.json(
-      { error: { code: "unauthorized", message: "Authentication required" } },
-      { status: 401 },
-    );
-  }
-
-  const { id } = await params;
-  const db = getDb(parseEnv().DATABASE_URL);
-  await deleteChat(
-    db,
-    {
-      userId: session.user.id,
-      organizationId: "",
-      workspaceId: "",
-    },
-    id,
-  );
-
-  return Response.json({ ok: true });
+  return wrapRoute(async () => {
+    const ctx = await requireSessionScopeOrThrow();
+    const { id } = await params;
+    await deleteChat(ctx.db, ctx.scope, id);
+    return Response.json({ ok: true });
+  });
 }

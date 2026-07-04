@@ -106,6 +106,9 @@ export const account = pgTable("account", {
   refreshTokenExpiresAt: timestamp({ mode: "date" }),
   scope: text(),
   idToken: text(),
+  // Better-Auth `emailAndPassword` provider stores the password hash here
+  // under `providerId: "credential"`. Required for email/password signup.
+  password: text(),
   createdAt: timestamp({ mode: "date", withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -369,3 +372,11 @@ export const schema = {
   auditLogs,
   instanceSettings,
 };
+
+/**
+ * Named type for the full Drizzle schema map. Consumers of `Db` (from
+ * `./client.js`) reach this indirectly via `NodePgDatabase<Schema>`; we
+ * export it explicitly so tests and adapters can typecheck against a
+ * single named contract instead of `typeof schema` at every call site.
+ */
+export type Schema = typeof schema;

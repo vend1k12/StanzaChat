@@ -11,6 +11,7 @@ export {
   type KeyStore,
   maskApiKey,
 } from "./crypto/index.js";
+export { createMockModel } from "./mock-provider.js";
 export {
   createProvider,
   type CreateProviderInput,
@@ -22,6 +23,11 @@ export {
   type ProviderRecord,
   updateProvider,
 } from "./model-config.js";
+export { resolveChatModel } from "./model-resolver.js";
+export {
+  groupArtifactsByIdentifier,
+  persistAssistantTurn,
+} from "./persistence.js";
 export {
   type ProviderConfig,
   type ResolvedModel,

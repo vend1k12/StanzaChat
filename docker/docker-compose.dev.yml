@@ -1,0 +1,36 @@
+# Local development Postgres for StanzaChat.
+#
+# Only the database — the Next.js app is expected to run outside Docker
+# during development (bun run dev). Full app + Postgres compose lands in
+# Phase 5 (SPEC §9) as docker/docker-compose.yml with profiles.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.dev.yml up -d
+#   set -a; . ./.env; set +a
+#   bun run db:push
+#   bun run dev
+#
+# The pgvector image is used from day one so v0.2 RAG needs no image swap
+# (SPEC §2, §4.3).
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: stanzachat-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: stanzachat
+      POSTGRES_PASSWORD: stanzachat
+      POSTGRES_DB: stanzachat
+    ports:
+      - "5432:5432"
+    volumes:
+      - stanzachat_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stanzachat -d stanzachat"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  stanzachat_pgdata:
+    name: stanzachat_pgdata

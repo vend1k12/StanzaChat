@@ -9,6 +9,7 @@
     "check-types": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push --force",
     "db:studio": "drizzle-kit studio",
     "lint": "eslint . --max-warnings=0",
     "test": "bun test test/slug.test.ts",

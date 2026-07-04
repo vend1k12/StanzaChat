@@ -7,6 +7,7 @@
     "BETTER_AUTH_SECRET",
     "BETTER_AUTH_URL",
     "ENCRYPTION_MASTER_KEY",
+    "E2E_MOCK_PROVIDER",
     "NODE_ENV",
     "PORT"
   ],
@@ -14,7 +15,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**", "dist/**"]
     },
     "lint": {
       "dependsOn": ["^lint"]
@@ -37,6 +38,9 @@
     },
     "db:migrate": {
       "dependsOn": ["^db:generate"]
+    },
+    "db:push": {
+      "dependsOn": []
     },
     "dev": {
       "cache": false,

@@ -14,7 +14,7 @@
     "build": "tsc --build",
     "check-types": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
-    "test": "bun test"
+    "test": "bun test test/"
   },
   "dependencies": {
     "zod": "^4.1.5"
