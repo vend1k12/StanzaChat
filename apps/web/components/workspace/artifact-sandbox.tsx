@@ -3,6 +3,7 @@
 import type { ArtifactType } from "@repo/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { MARKDOWN_STEPS_JSON } from "@/lib/markdown-sandbox";
 import { acceptSandboxMessage } from "@/lib/sandbox-message";
 
 /**
@@ -91,18 +92,16 @@ const BOOTSTRAP = `<!doctype html>
         // Minimal, safe markdown → HTML. The sandbox is origin-isolated,
         // so even raw HTML cannot reach the host; we still escape first
         // to keep the rendered document structurally valid.
-        var esc = content
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
-        var html = esc
-          .replace(/^### (.*)$/gm, "<h3>$1</h3>")
-          .replace(/^## (.*)$/gm, "<h2>$1</h2>")
-          .replace(/^# (.*)$/gm, "<h1>$1</h1>")
-          .replace(/\\*\\*(.+?)\\*\\*/g, "<strong>$1</strong>")
-          .replace(/\`(.+?)\`/g, "<code>$1</code>")
-          .replace(/\\n\\n/g, "</p><p>")
-          .replace(/\\n/g, "<br>");
+        //
+        // The step list is interpolated from apps/web/lib/markdown-sandbox.ts
+        // (MARKDOWN_STEPS) so the host-side renderer and this iframe stay
+        // byte-identical — see test/markdown-sandbox.test.ts for the
+        // invariant check.
+        var steps = ${MARKDOWN_STEPS_JSON};
+        var html = content;
+        for (var i = 0; i < steps.length; i += 1) {
+          html = html.replace(new RegExp(steps[i].pattern, steps[i].flags), steps[i].replacement);
+        }
         body.innerHTML = "<p>" + html + "</p>";
       } else {
         // html / svg: inject as markup. Sandbox has null origin + no

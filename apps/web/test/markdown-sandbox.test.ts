@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 
-import { renderSandboxMarkdown } from "../lib/markdown-sandbox";
+import {
+  MARKDOWN_STEPS,
+  MARKDOWN_STEPS_JSON,
+  renderSandboxMarkdown,
+} from "../lib/markdown-sandbox";
 
 /**
  * Tests for the byte-for-byte port of the sandbox `BOOTSTRAP` markdown
@@ -71,5 +75,53 @@ describe("renderSandboxMarkdown — paragraphs and breaks", () => {
 
   it("handles empty content", () => {
     expect(renderSandboxMarkdown("")).toBe("<p></p>");
+  });
+});
+
+describe("renderSandboxMarkdown — sandbox pipeline invariant", () => {
+  // The iframe BOOTSTRAP in components/workspace/artifact-sandbox.tsx
+  // interpolates MARKDOWN_STEPS_JSON and iterates the steps the same
+  // way the host function does. This test rehydrates the JSON as if it
+  // were running inside the sandbox and asserts byte-for-byte parity
+  // with renderSandboxMarkdown on a corpus that exercises every step.
+  interface RawStep {
+    pattern: string;
+    flags: string;
+    replacement: string;
+  }
+  function runSandboxLike(content: string, stepsJson: string): string {
+    const steps = JSON.parse(stepsJson) as RawStep[];
+    let html = content;
+    for (const step of steps) {
+      // Steps come from MARKDOWN_STEPS_JSON — module-owned test data.
+      // eslint-disable-next-line security/detect-non-literal-regexp
+      html = html.replace(new RegExp(step.pattern, step.flags), step.replacement);
+    }
+    return `<p>${html}</p>`;
+  }
+
+  const corpus = [
+    "",
+    "plain",
+    "a & b < c > d",
+    "<script>alert(1)</script>",
+    "# H1\n## H2\n### H3",
+    "**bold** and `code`",
+    "line1\nline2",
+    "para1\n\npara2",
+    "mixed **a** with `b` and \n\n<em>escaped</em>",
+  ];
+
+  for (const input of corpus) {
+    it(`agrees with the sandbox pipeline for ${JSON.stringify(input)}`, () => {
+      const host = renderSandboxMarkdown(input);
+      const sandbox = runSandboxLike(input, MARKDOWN_STEPS_JSON);
+      expect(sandbox).toBe(host);
+    });
+  }
+
+  it("MARKDOWN_STEPS_JSON round-trips MARKDOWN_STEPS structurally", () => {
+    const parsed = JSON.parse(MARKDOWN_STEPS_JSON);
+    expect(parsed).toEqual([...MARKDOWN_STEPS]);
   });
 });

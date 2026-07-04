@@ -35,9 +35,9 @@ export interface ArtifactVersionDto {
   versionNumber: number;
   content: string;
   messageId: string | null;
+  /** True when the artifact-end tag never arrived — the version is a truncated stream. */
   incomplete: boolean;
   createdAt: string;
-  updatedAt: string;
 }
 
 interface ArtifactsResponse {
