@@ -16,7 +16,14 @@ export {
   saveMessage,
   updateChat,
 } from "./chats.js";
-export { createDb, type Db, getDb, resetDbCache } from "./client.js";
+export {
+  createDb,
+  type Db,
+  type DbClient,
+  type DbTx,
+  getDb,
+  resetDbCache,
+} from "./client.js";
 export {
   artifacts,
   artifactVersions,

@@ -1,9 +1,35 @@
+import type {
+  NodePgDatabase,
+  NodePgTransaction,
+} from "drizzle-orm/node-postgres";
 import { drizzle } from "drizzle-orm/node-postgres";
+import type { ExtractTablesWithRelations } from "drizzle-orm/relations";
 import { Pool } from "pg";
 
-import { schema } from "./schema.js";
+import { type Schema,schema } from "./schema.js";
 
-export type Db = ReturnType<typeof createDb>;
+/**
+ * Concrete Drizzle database client used by every data-access function.
+ *
+ * Named directly (not `ReturnType<typeof createDb>`) so JSDoc and changelog
+ * notes attach to the type and consumers stop coupling to implementation
+ * names. See `docs/agents/conventions.md`.
+ */
+export type Db = NodePgDatabase<Schema>;
+
+/**
+ * The transaction handle Drizzle hands to the callback of `db.transaction`.
+ * Structurally the same query builder as `Db`, plus rollback/commit hooks.
+ */
+export type DbTx = NodePgTransaction<Schema, ExtractTablesWithRelations<Schema>>;
+
+/**
+ * Accepts either a top-level `Db` or an in-flight transaction `DbTx`.
+ * Data-access functions that participate in a `db.transaction(...)` block
+ * take this widened parameter so callers can compose them into an
+ * all-or-nothing commit.
+ */
+export type DbClient = Db | DbTx;
 
 /**
  * Create a Drizzle database client from a Postgres connection string.
@@ -13,7 +39,7 @@ export type Db = ReturnType<typeof createDb>;
  * is Node.js ≥ 20 (SPEC §2). Bun is the package manager / task runner
  * only, so we use the standard `pg` Pool which is Bun-compatible.
  */
-export function createDb(databaseUrl: string) {
+export function createDb(databaseUrl: string): Db {
   const pool = new Pool({ connectionString: databaseUrl });
   // `casing: "snake_case"` maps camelCase Drizzle field names to
   // snake_case column names automatically, per docs/agents/conventions.md:

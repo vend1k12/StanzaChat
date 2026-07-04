@@ -1,10 +1,44 @@
 import type { ArtifactType } from "@repo/shared";
+import { NotFoundError } from "@repo/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 
-import type { Db } from "./client.js";
+import type { DbClient } from "./client.js";
 import type { TenantScope } from "./schema.js";
 import { artifacts, artifactVersions, chats } from "./schema.js";
 import { createUlid } from "./slug.js";
+
+/**
+ * Row shape returned by `listArtifactsForChat`.
+ */
+export interface ArtifactRow {
+  id: string;
+  chatId: string;
+  identifier: string;
+  type: ArtifactType;
+  title: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Row shape returned by `getArtifact` (same fields as `ArtifactRow`).
+ */
+export type ArtifactSummary = ArtifactRow;
+
+/**
+ * Row shape returned by every version read (`listArtifactVersions`,
+ * `getArtifactVersion`, `getLatestArtifactVersion`). `incomplete` is
+ * surfaced so the UI can badge or hide truncated versions.
+ */
+export interface ArtifactVersionRow {
+  id: string;
+  artifactId: string;
+  versionNumber: number;
+  content: string;
+  messageId: string | null;
+  incomplete: boolean;
+  createdAt: Date;
+}
 
 /**
  * Data-access functions for artifacts and their versions (SPEC §5.2).
@@ -31,7 +65,7 @@ import { createUlid } from "./slug.js";
  * cases so the caller can insert a version pointing at it.
  */
 export async function upsertArtifact(
-  db: Db,
+  db: DbClient,
   scope: TenantScope,
   input: {
     chatId: string;
@@ -41,13 +75,15 @@ export async function upsertArtifact(
   },
 ): Promise<string> {
   // Ownership check — read the chat through the scope predicate; a
-  // cross-tenant `chatId` won't return a row and we throw before writing.
+  // cross-tenant `chatId` won't return a row and we throw the typed
+  // `NotFoundError` so `wrapRoute` maps it to a 404 upstream (see
+  // `docs/agents/conventions.md` "Error handling").
   const [chat] = await db
     .select({ id: chats.id })
     .from(chats)
     .where(and(eq(chats.id, input.chatId), eq(chats.userId, scope.userId)));
   if (!chat) {
-    throw new Error(`Chat not found or not owned by user: ${input.chatId}`);
+    throw new NotFoundError("Chat", input.chatId);
   }
 
   const id = createUlid();
@@ -75,9 +111,15 @@ export async function upsertArtifact(
  * Insert the next version for an artifact. The version number is
  * computed atomically inside the INSERT via a scalar subselect so
  * concurrent streams cannot allocate the same number.
+ *
+ * Under contention two concurrent inserts may both compute the same
+ * `versionNumber`; the `artifact_version_number_unique` index on
+ * `(artifact_id, version_number)` rejects the loser with a Postgres
+ * unique-violation. We catch that specific error class and retry once
+ * with a freshly-computed number. Any other failure propagates.
  */
 export async function createArtifactVersion(
-  db: Db,
+  db: DbClient,
   input: {
     artifactId: string;
     content: string;
@@ -85,23 +127,55 @@ export async function createArtifactVersion(
     incomplete: boolean;
   },
 ): Promise<string> {
-  const id = createUlid();
   const nextVersion = sql<number>`(
     SELECT COALESCE(MAX(${artifactVersions.versionNumber}), 0) + 1
     FROM ${artifactVersions}
     WHERE ${artifactVersions.artifactId} = ${input.artifactId}
   )`;
 
-  await db.insert(artifactVersions).values({
-    id,
-    artifactId: input.artifactId,
-    versionNumber: nextVersion,
-    content: input.content,
-    messageId: input.messageId,
-    incomplete: input.incomplete,
-  });
+  // At most one retry — if two concurrent inserts collide on the
+  // unique index, the retry recomputes MAX(versionNumber) + 1 and
+  // settles the ordering. Each attempt runs inside its own nested
+  // transaction so that when the caller is already in a `db.transaction`
+  // the unique-violation aborts only the savepoint, not the outer tx.
+  // (Drizzle's nested `.transaction(...)` compiles to a SAVEPOINT.)
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const id = createUlid();
+    try {
+      await db.transaction(async (sp) => {
+        await sp.insert(artifactVersions).values({
+          id,
+          artifactId: input.artifactId,
+          versionNumber: nextVersion,
+          content: input.content,
+          messageId: input.messageId,
+          incomplete: input.incomplete,
+        });
+      });
+      return id;
+    } catch (err) {
+      if (attempt === 0 && isUniqueVersionViolation(err)) {
+        continue;
+      }
+      throw err;
+    }
+  }
+  // Unreachable — either the try returns or the catch throws.
+  throw new Error("createArtifactVersion: retry exhausted");
+}
 
-  return id;
+/**
+ * Postgres unique-violation `SQLSTATE 23505` on the
+ * `artifact_version_number_unique` index. Node-postgres surfaces the
+ * code on the thrown error as `.code`; we accept either the shorthand
+ * check or the constraint name to stay resilient to driver wrapping.
+ */
+function isUniqueVersionViolation(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { code?: unknown; constraint?: unknown };
+  return (
+    e.code === "23505" || e.constraint === "artifact_version_number_unique"
+  );
 }
 
 // ── Reads (all scoped through the chats.user_id predicate) ────────────
@@ -112,21 +186,10 @@ export async function createArtifactVersion(
  * can 404 without leaking existence).
  */
 export async function listArtifactsForChat(
-  db: Db,
+  db: DbClient,
   scope: TenantScope,
   chatId: string,
-): Promise<
-  | {
-      id: string;
-      chatId: string;
-      identifier: string;
-      type: ArtifactType;
-      title: string | null;
-      createdAt: Date;
-      updatedAt: Date;
-    }[]
-  | undefined
-> {
+): Promise<ArtifactRow[] | undefined> {
   const [chat] = await db
     .select({ id: chats.id })
     .from(chats)
@@ -134,7 +197,15 @@ export async function listArtifactsForChat(
   if (!chat) return undefined;
 
   return db
-    .select()
+    .select({
+      id: artifacts.id,
+      chatId: artifacts.chatId,
+      identifier: artifacts.identifier,
+      type: artifacts.type,
+      title: artifacts.title,
+      createdAt: artifacts.createdAt,
+      updatedAt: artifacts.updatedAt,
+    })
     .from(artifacts)
     .where(eq(artifacts.chatId, chatId))
     .orderBy(desc(artifacts.updatedAt));
@@ -145,10 +216,10 @@ export async function listArtifactsForChat(
  * when the artifact doesn't exist or isn't visible to the scope's user.
  */
 export async function getArtifact(
-  db: Db,
+  db: DbClient,
   scope: TenantScope,
   artifactId: string,
-) {
+): Promise<ArtifactSummary | undefined> {
   const [row] = await db
     .select({
       id: artifacts.id,
@@ -170,15 +241,23 @@ export async function getArtifact(
  * when the artifact isn't visible to the scope's user.
  */
 export async function listArtifactVersions(
-  db: Db,
+  db: DbClient,
   scope: TenantScope,
   artifactId: string,
-) {
+): Promise<ArtifactVersionRow[] | undefined> {
   const artifact = await getArtifact(db, scope, artifactId);
   if (!artifact) return undefined;
 
   return db
-    .select()
+    .select({
+      id: artifactVersions.id,
+      artifactId: artifactVersions.artifactId,
+      versionNumber: artifactVersions.versionNumber,
+      content: artifactVersions.content,
+      messageId: artifactVersions.messageId,
+      incomplete: artifactVersions.incomplete,
+      createdAt: artifactVersions.createdAt,
+    })
     .from(artifactVersions)
     .where(eq(artifactVersions.artifactId, artifactId))
     .orderBy(desc(artifactVersions.versionNumber));
@@ -190,10 +269,10 @@ export async function listArtifactVersions(
  * scope's user.
  */
 export async function getArtifactVersion(
-  db: Db,
+  db: DbClient,
   scope: TenantScope,
   versionId: string,
-) {
+): Promise<ArtifactVersionRow | undefined> {
   const [row] = await db
     .select({
       id: artifactVersions.id,
@@ -214,21 +293,37 @@ export async function getArtifactVersion(
 }
 
 /**
- * Fetch the latest version content for an artifact — convenience for
- * the panel's initial render (Preview/Code tabs).
+ * Fetch the latest COMPLETE version for an artifact — convenience for
+ * the panel's initial render (Preview/Code tabs). Skips versions with
+ * `incomplete=true` so a truncated stream never surfaces as "current";
+ * callers who need visibility into the incomplete tail should use
+ * `listArtifactVersions`, which returns every row with the flag.
  */
 export async function getLatestArtifactVersion(
-  db: Db,
+  db: DbClient,
   scope: TenantScope,
   artifactId: string,
-) {
+): Promise<ArtifactVersionRow | undefined> {
   const artifact = await getArtifact(db, scope, artifactId);
   if (!artifact) return undefined;
 
   const [row] = await db
-    .select()
+    .select({
+      id: artifactVersions.id,
+      artifactId: artifactVersions.artifactId,
+      versionNumber: artifactVersions.versionNumber,
+      content: artifactVersions.content,
+      messageId: artifactVersions.messageId,
+      incomplete: artifactVersions.incomplete,
+      createdAt: artifactVersions.createdAt,
+    })
     .from(artifactVersions)
-    .where(eq(artifactVersions.artifactId, artifactId))
+    .where(
+      and(
+        eq(artifactVersions.artifactId, artifactId),
+        eq(artifactVersions.incomplete, false),
+      ),
+    )
     .orderBy(desc(artifactVersions.versionNumber))
     .limit(1);
   return row;

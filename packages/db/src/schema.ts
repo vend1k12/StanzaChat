@@ -372,3 +372,11 @@ export const schema = {
   auditLogs,
   instanceSettings,
 };
+
+/**
+ * Named type for the full Drizzle schema map. Consumers of `Db` (from
+ * `./client.js`) reach this indirectly via `NodePgDatabase<Schema>`; we
+ * export it explicitly so tests and adapters can typecheck against a
+ * single named contract instead of `typeof schema` at every call site.
+ */
+export type Schema = typeof schema;

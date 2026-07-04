@@ -16,7 +16,16 @@ import { type ArtifactEvent, parseComplete } from "./artifact-parser.js";
  * safe place to write both the assistant message and any artifacts it
  * emitted.
  *
- * Flow:
+ * All writes execute inside a single `db.transaction(...)` block so a
+ * partial failure (e.g. `upsertArtifact` throws `NotFoundError` on a
+ * scope mismatch, or `createArtifactVersion` hits an unrecoverable
+ * unique-violation) rolls back the assistant message too, avoiding
+ * orphaned rows. NOTE: the AI SDK's `notify` helper swallows any error
+ * thrown from `onEnd` (empty `catch (e) {}`), so the transaction is the
+ * ONLY mechanism keeping the DB self-consistent under partial failure —
+ * do not lift these writes back into the caller.
+ *
+ * Flow (inside tx):
  * 1. Save assistant message (raw text incl. artifact tags — the client
  *    strips them at render time; the raw form is the audit trail).
  * 2. Run `parseComplete` on the full text to derive artifact events.
@@ -37,34 +46,37 @@ export async function persistAssistantTurn(input: {
   modelId: string | undefined;
 }): Promise<void> {
   const { db, scope, chatId, text, usage, modelId } = input;
-
-  const messageId = await saveMessage(db, {
-    chatId,
-    role: "assistant",
-    content: text,
-    tokenUsage: {
-      prompt: usage?.inputTokens,
-      completion: usage?.outputTokens,
-      total: (usage?.inputTokens ?? 0) + (usage?.outputTokens ?? 0),
-    },
-    modelId,
-  });
-
   const events = parseComplete(text);
-  for (const artifact of groupArtifactsByIdentifier(events)) {
-    const artifactId = await upsertArtifact(db, scope, {
+  const grouped = groupArtifactsByIdentifier(events);
+
+  await db.transaction(async (tx) => {
+    const messageId = await saveMessage(tx, {
       chatId,
-      identifier: artifact.meta.identifier,
-      type: artifact.meta.type,
-      title: artifact.meta.title || null,
+      role: "assistant",
+      content: text,
+      tokenUsage: {
+        prompt: usage?.inputTokens,
+        completion: usage?.outputTokens,
+        total: (usage?.inputTokens ?? 0) + (usage?.outputTokens ?? 0),
+      },
+      modelId,
     });
-    await createArtifactVersion(db, {
-      artifactId,
-      content: artifact.content,
-      messageId,
-      incomplete: artifact.incomplete,
-    });
-  }
+
+    for (const artifact of grouped) {
+      const artifactId = await upsertArtifact(tx, scope, {
+        chatId,
+        identifier: artifact.meta.identifier,
+        type: artifact.meta.type,
+        title: artifact.meta.title || null,
+      });
+      await createArtifactVersion(tx, {
+        artifactId,
+        content: artifact.content,
+        messageId,
+        incomplete: artifact.incomplete,
+      });
+    }
+  });
 }
 
 interface CollectedArtifact {
