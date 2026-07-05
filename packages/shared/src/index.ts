@@ -1,4 +1,6 @@
 export {
+  type AuditLogsQuery,
+  auditLogsQuerySchema,
   type ChatMessage,
   chatMessageSchema,
   type ChatStream,
@@ -11,6 +13,10 @@ export {
   updateChatSchema,
   type UpdateProvider,
   updateProviderSchema,
+  type UpdateSettings,
+  updateSettingsSchema,
+  type UpdateUser,
+  updateUserSchema,
 } from "./api-schemas.js";
 export {
   ARTIFACT_TYPES,
@@ -36,3 +42,9 @@ export {
   UnauthorizedError,
   ValidationError,
 } from "./errors.js";
+export {
+  createRateLimiter,
+  type RateLimiter,
+  type RateLimitOptions,
+  type RateLimitResult,
+} from "./rate-limit.js";

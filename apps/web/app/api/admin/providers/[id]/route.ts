@@ -11,7 +11,9 @@ import {
   ValidationError,
 } from "@repo/shared";
 
+import { auditContextFor } from "@/lib/audit";
 import { wrapRoute } from "@/lib/http";
+import { adminLimiter, rateLimitResponse, requestIp } from "@/lib/rate-limit";
 import { requireInstanceAdmin } from "@/lib/session";
 
 export const runtime = "nodejs";
@@ -22,6 +24,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   return wrapRoute(async () => {
+    const gate = adminLimiter.consume(await requestIp());
+    if (!gate.ok) return rateLimitResponse(gate);
     const ctx = await requireInstanceAdmin();
     const { id } = await params;
     const provider = await getProvider(ctx.db, id);
@@ -37,6 +41,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   return wrapRoute(async () => {
+    const gate = adminLimiter.consume(await requestIp());
+    if (!gate.ok) return rateLimitResponse(gate);
+
     const ctx = await requireInstanceAdmin();
     const { id } = await params;
 
@@ -46,21 +53,31 @@ export async function PATCH(
       throw new ValidationError(parsed.error.message);
     }
 
-    // Encrypt API key if provided
+    // Verify the target exists so we return 404 instead of a silent no-op.
+    const existing = await getProvider(ctx.db, id);
+    if (!existing) throw new NotFoundError("Provider", id);
+
+    // Encrypt API key if provided.
     let encryptedApiKey;
     if (parsed.data.apiKey) {
       const keyStore = new AesGcmKeyStore(parseEnv().ENCRYPTION_MASTER_KEY);
       encryptedApiKey = await keyStore.encrypt(parsed.data.apiKey);
     }
 
-    await updateProvider(ctx.db, id, {
-      label: parsed.data.label,
-      baseUrl: parsed.data.baseUrl || undefined,
-      encryptedApiKey,
-      enabledModels: parsed.data.enabledModels,
-      isDefault: parsed.data.isDefault,
-      enabled: parsed.data.enabled,
-    });
+    const audit = await auditContextFor(ctx.session);
+    await updateProvider(
+      ctx.db,
+      id,
+      {
+        label: parsed.data.label,
+        baseUrl: parsed.data.baseUrl || undefined,
+        encryptedApiKey,
+        enabledModels: parsed.data.enabledModels,
+        isDefault: parsed.data.isDefault,
+        enabled: parsed.data.enabled,
+      },
+      audit,
+    );
 
     return Response.json({ ok: true });
   });
@@ -71,9 +88,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   return wrapRoute(async () => {
+    const gate = adminLimiter.consume(await requestIp());
+    if (!gate.ok) return rateLimitResponse(gate);
+
     const ctx = await requireInstanceAdmin();
     const { id } = await params;
-    await deleteProvider(ctx.db, id);
+
+    const existing = await getProvider(ctx.db, id);
+    if (!existing) throw new NotFoundError("Provider", id);
+
+    const audit = await auditContextFor(ctx.session);
+    await deleteProvider(ctx.db, id, audit);
     return Response.json({ ok: true });
   });
 }

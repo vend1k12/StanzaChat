@@ -34,3 +34,18 @@
 ## Formatting
 
 Prettier is the single source of formatting truth; never hand-format against it. ESLint enforces import order, tailwind class order, drizzle safety rules, and security rules — fix, don't disable. A rule disable requires an inline comment with a reason.
+
+## Admin mutations
+
+- Every mutating admin action (SPEC §5.5) is composed of two writes in
+  the SAME transaction: the state change and its `audit_logs` row. The
+  package-level helper owns the `db.transaction(...)` block and accepts
+  an `AuditContext` (`actorUserId`, `ip`); the Route Handler builds the
+  context via `auditContextFor(session)` and passes it in. `audit_logs`
+  is append-only (guardrails #9) — no update/delete helpers exist and
+  none should be added.
+- Rate-limiters (`chatLimiter`, `adminLimiter` in `apps/web/lib/rate-limit.ts`)
+  are the ONLY place limits are enforced. Route Handlers `consume` at
+  the top of the block and return `rateLimitResponse(gate)` on failure
+  BEFORE any DB work. Swap to Redis in v0.2 by changing the limiter
+  factory only.

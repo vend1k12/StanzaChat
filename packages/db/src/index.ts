@@ -1,4 +1,16 @@
 export {
+  type AdminUserRecord,
+  type AuditContext,
+  type AuditLogRecord,
+  getUserById,
+  listAuditLogs,
+  type ListAuditLogsFilter,
+  listUsers,
+  updateInstanceSettings,
+  updateUserAdminState,
+  writeAuditLog,
+} from "./admin.js";
+export {
   createArtifactVersion,
   getArtifact,
   getArtifactVersion,

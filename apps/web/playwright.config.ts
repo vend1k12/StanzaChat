@@ -19,10 +19,15 @@ const baseURL = process.env.BETTER_AUTH_URL ?? `http://localhost:${port}`;
 export default defineConfig({
   globalSetup: "./e2e/global.setup.ts",
   testDir: "./e2e",
+  // Every spec exercises the shared Postgres, and specs that depend on
+  // first-run promotion (admin.spec.ts, workspace.spec.ts) require the
+  // TRUNCATE from `global.setup.ts` to still be in effect when they
+  // run. Serialising specs — even locally — keeps them from racing over
+  // the "first sign-up" invariant. Tests inside a file remain parallel.
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL,

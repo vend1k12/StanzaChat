@@ -10,6 +10,7 @@ import type { LanguageModel, UIMessage } from "ai";
 import { convertToModelMessages, streamText } from "ai";
 
 import { wrapRoute } from "@/lib/http";
+import { chatLimiter, rateLimitResponse } from "@/lib/rate-limit";
 import { requireSessionScopeOrThrow } from "@/lib/session";
 
 export const runtime = "nodejs";
@@ -40,6 +41,12 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   return wrapRoute(async () => {
+    // Session first — the rate-limit key is the userId so the limit is
+    // per-authenticated-user, not per-IP (SPEC §7).
+    const ctx = await requireSessionScopeOrThrow();
+    const gate = chatLimiter.consume(ctx.session.user.id);
+    if (!gate.ok) return rateLimitResponse(gate);
+
     const body = await request.json();
     const parsed = chatStreamSchema.safeParse(body);
     if (!parsed.success) {
@@ -47,8 +54,6 @@ export async function POST(request: Request) {
     }
     const { chatId, messages } = parsed.data;
     const uiMessages = messages as UIMessage[];
-
-    const ctx = await requireSessionScopeOrThrow();
 
     const chat = await getChat(ctx.db, ctx.scope, chatId);
     if (!chat) {
