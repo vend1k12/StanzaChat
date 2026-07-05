@@ -1,15 +1,18 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
+
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
  * Two-column shell used by `/auth/sign-in` and `/auth/sign-up`.
  *
- * Left: warm cream brand panel with the Anthropic-style spike-mark,
- *       product framing, and a subtle terminal artifact preview.
- * Right: the form card on the plain canvas.
+ * Left: warm cream brand panel with spike-mark, headline, lede, terminal mockup.
+ * Right: the form on plain canvas with a theme-toggle in the top-right corner.
  *
- * Kept as a server component — the interactive form is passed in as
- * `children`. No client-only APIs here so the shell can prerender.
+ * Client component (theme toggle needs `useTheme`). The form itself is
+ * passed as `children` and can be any interactive component.
  */
 export interface AuthShellProps {
   eyebrow: string;
@@ -26,7 +29,7 @@ export function AuthShell({
 }: AuthShellProps) {
   return (
     <main className="grid min-h-dvh grid-cols-1 bg-canvas lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
-      <aside className="relative hidden overflow-hidden bg-surface-soft lg:flex lg:flex-col lg:justify-between lg:p-12">
+      <aside className="relative hidden overflow-hidden border-r border-hairline bg-surface-soft lg:flex lg:flex-col lg:justify-between lg:p-12">
         <Link
           href="/"
           className="flex items-center gap-2 text-ink hover:opacity-80"
@@ -64,7 +67,10 @@ export function AuthShell({
         </div>
       </aside>
 
-      <section className="flex flex-col justify-center bg-canvas px-6 py-16 lg:px-16">
+      <section className="relative flex flex-col justify-center bg-canvas px-6 py-16 lg:px-16">
+        <div className="absolute top-5 right-5">
+          <ThemeToggle />
+        </div>
         <div className="mx-auto flex w-full max-w-sm flex-col">
           <Link
             href="/"

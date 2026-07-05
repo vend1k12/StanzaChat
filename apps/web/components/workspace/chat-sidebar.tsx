@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useViewer } from "@/components/workspace/viewer-context";
 import { signOut, useSession } from "@/lib/auth-client";
@@ -155,14 +156,17 @@ export function ChatSidebar({ selectedChatId }: ChatSidebarProps) {
               {user?.email}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={handleSignOut}
-            aria-label="Sign out"
-            className="rounded-md p-1.5 text-muted-ink transition hover:bg-surface-card hover:text-ink"
-          >
-            <LogOut className="size-4" />
-          </button>
+          <div className="flex items-center gap-0.5">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={handleSignOut}
+              aria-label="Sign out"
+              className="rounded-md p-1.5 text-muted-ink transition hover:bg-surface-card hover:text-ink"
+            >
+              <LogOut className="size-4" />
+            </button>
+          </div>
         </div>
       </div>
     </aside>

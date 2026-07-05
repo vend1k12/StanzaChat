@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/session";
 
@@ -29,7 +30,8 @@ export default async function HomePage() {
             StanzaChat
           </span>
         </div>
-        <nav className="flex items-center gap-4 text-sm">
+        <nav className="flex items-center gap-3 text-sm">
+          <ThemeToggle />
           <Link href="/auth/sign-in" className="text-ink/80 hover:text-ink">
             Sign in
           </Link>

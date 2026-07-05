@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { signOut } from "@/lib/auth-client";
 
 /**
@@ -49,14 +50,17 @@ export function AdminUserMenu({ email, name }: AdminUserMenuProps) {
           {email}
         </span>
       </div>
-      <button
-        type="button"
-        onClick={handleSignOut}
-        aria-label="Sign out"
-        className="ml-auto rounded-md p-1.5 text-muted-ink transition hover:bg-surface-card hover:text-ink"
-      >
-        <LogOut className="size-4" />
-      </button>
+      <div className="ml-auto flex items-center gap-1">
+        <ThemeToggle />
+        <button
+          type="button"
+          onClick={handleSignOut}
+          aria-label="Sign out"
+          className="rounded-md p-1.5 text-muted-ink transition hover:bg-surface-card hover:text-ink"
+        >
+          <LogOut className="size-4" />
+        </button>
+      </div>
     </div>
   );
 }
