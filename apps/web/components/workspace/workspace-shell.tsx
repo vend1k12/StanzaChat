@@ -30,7 +30,7 @@ export function WorkspaceShell({ selectedChatId }: WorkspaceShellProps) {
   const showPanel = panelOpen && Boolean(activeArtifactId);
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-background">
+    <div className="flex h-dvh w-full overflow-hidden bg-canvas">
       <ChatSidebar selectedChatId={selectedChatId} />
       <main className="flex min-w-0 flex-1 flex-col">
         <ChatView chatId={selectedChatId} />

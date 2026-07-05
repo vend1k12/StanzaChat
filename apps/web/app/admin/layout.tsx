@@ -2,15 +2,17 @@ import { can } from "@repo/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminUserMenu } from "@/components/admin/admin-user-menu";
 import { getSession } from "@/lib/session";
 
 /**
  * Server-side guard for the `/admin` segment (SPEC §5.5).
  *
- * Non-admin visitors are bounced — this is defence in depth: every
- * `/api/admin/*` route still enforces `requireInstanceAdmin` server
- * side (guardrails #7). Route Handler 403s remain the load-bearing
- * check; this redirect just avoids rendering an unreachable UI.
+ * Non-admin visitors are bounced back to `/chats` — this is defence in
+ * depth: every `/api/admin/*` route still enforces `requireInstanceAdmin`
+ * (guardrails #7). Route Handler 403s remain load-bearing; this
+ * redirect just avoids rendering an unreachable UI.
  */
 export const dynamic = "force-dynamic";
 
@@ -32,41 +34,51 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-background">
-      <header className="border-b bg-muted/40 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold">Admin</h1>
-            <p className="text-xs text-muted-foreground">
-              Signed in as {session.user.email}
-            </p>
-          </div>
+    <div className="grid min-h-dvh grid-cols-1 bg-canvas lg:grid-cols-[260px_minmax(0,1fr)]">
+      <aside className="hidden border-r border-hairline bg-surface-soft lg:flex lg:flex-col">
+        <div className="border-b border-hairline px-6 py-5">
           <Link
             href="/chats"
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-2 text-ink hover:opacity-80"
           >
-            ← Back to chats
+            <span className="spike-mark" aria-hidden />
+            <span className="font-display text-[20px] leading-none tracking-tight">
+              StanzaChat
+            </span>
           </Link>
+          <p className="eyebrow mt-4">Instance admin</p>
         </div>
-        <nav className="mt-3 flex gap-4 text-sm">
-          <AdminNavLink href="/admin/providers" label="Providers" />
-          <AdminNavLink href="/admin/users" label="Users" />
-          <AdminNavLink href="/admin/settings" label="Settings" />
-          <AdminNavLink href="/admin/audit" label="Audit log" />
-        </nav>
-      </header>
-      <main className="flex-1 overflow-y-auto p-6">{children}</main>
-    </div>
-  );
-}
+        <AdminNav />
+        <div className="mt-auto border-t border-hairline p-4">
+          <AdminUserMenu
+            email={session.user.email}
+            name={session.user.name ?? null}
+          />
+        </div>
+      </aside>
 
-function AdminNavLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="rounded-md px-2 py-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-    >
-      {label}
-    </Link>
+      <div className="flex min-w-0 flex-col">
+        <header className="flex items-center justify-between border-b border-hairline bg-canvas/70 px-8 py-4 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/chats"
+              className="rounded-md border border-hairline bg-canvas px-3 py-1.5 text-xs font-medium text-body-strong transition hover:bg-surface-card"
+            >
+              ← Back to chats
+            </Link>
+            <span className="hidden text-xs text-muted-ink sm:inline">
+              Signed in as{" "}
+              <span className="font-mono text-body">{session.user.email}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-3 lg:hidden">
+            <AdminNav variant="compact" />
+          </div>
+        </header>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10 lg:px-10 lg:py-14">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }

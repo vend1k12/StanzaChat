@@ -6,14 +6,6 @@ import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from "@/lib/auth-client";
@@ -23,8 +15,7 @@ import { signIn } from "@/lib/auth-client";
  * `getSession()` recognises the cookie on the next request.
  *
  * On success we `router.push(redirect ?? "/chats")` and `router.refresh()`
- * so the server layout re-fetches the session and any middleware guard
- * short-circuits normally.
+ * so the server layout re-fetches the session.
  */
 export function SignInForm() {
   const router = useRouter();
@@ -57,52 +48,52 @@ export function SignInForm() {
     : "/auth/sign-up";
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>
-          Welcome back. Sign in to your StanzaChat workspace.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? "Signing in…" : "Sign in"}
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="justify-center text-sm">
-        <span className="text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href={signUpHref} className="text-foreground underline">
-            Sign up
-          </Link>
-        </span>
-      </CardFooter>
-    </Card>
+    <div className="flex flex-col gap-8">
+      <div>
+        <p className="eyebrow mb-3">Sign in</p>
+        <h2 className="font-display text-[32px] leading-tight tracking-[-0.02em] text-ink">
+          Sign in to your workspace
+        </h2>
+        <p className="mt-2 text-sm text-muted-ink">
+          Use the credentials you set at first-run.
+        </p>
+      </div>
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <Button type="submit" size="lg" className="w-full" disabled={isPending}>
+          {isPending ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+      <p className="text-sm text-muted-ink">
+        No account yet?{" "}
+        <Link href={signUpHref} className="text-coral hover:underline">
+          Create one
+        </Link>
+        .
+      </p>
+    </div>
   );
 }

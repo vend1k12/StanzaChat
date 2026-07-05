@@ -6,14 +6,6 @@ import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signUp } from "@/lib/auth-client";
@@ -22,9 +14,6 @@ import { signUp } from "@/lib/auth-client";
  * Client sign-up form (SPEC §5.4). Better-Auth's `admin` plugin promotes
  * the first successful sign-up to instance admin and auto-creates a
  * personal organization + default workspace via the server-side hook.
- *
- * On success we `router.push(redirect ?? "/chats")` and `router.refresh()`
- * so the server session read picks up the newly-issued cookie.
  */
 export function SignUpForm() {
   const router = useRouter();
@@ -58,65 +47,68 @@ export function SignUpForm() {
     : "/auth/sign-in";
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Create your account</CardTitle>
-        <CardDescription>
-          Set up your StanzaChat workspace in a few seconds.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? "Creating account…" : "Create account"}
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="justify-center text-sm">
-        <span className="text-muted-foreground">
-          Already have an account?{" "}
-          <Link href={signInHref} className="text-foreground underline">
-            Sign in
-          </Link>
-        </span>
-      </CardFooter>
-    </Card>
+    <div className="flex flex-col gap-8">
+      <div>
+        <p className="eyebrow mb-3">Create account</p>
+        <h2 className="font-display text-[32px] leading-tight tracking-[-0.02em] text-ink">
+          Create your account
+        </h2>
+        <p className="mt-2 text-sm text-muted-ink">
+          A personal organization + default workspace are created for you.
+        </p>
+      </div>
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            name="name"
+            type="text"
+            autoComplete="name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <p className="text-xs text-muted-soft">
+            At least 8 characters — you can change it later.
+          </p>
+        </div>
+        <Button type="submit" size="lg" className="w-full" disabled={isPending}>
+          {isPending ? "Creating account…" : "Create account"}
+        </Button>
+      </form>
+      <p className="text-sm text-muted-ink">
+        Already registered?{" "}
+        <Link href={signInHref} className="text-coral hover:underline">
+          Sign in instead
+        </Link>
+        .
+      </p>
+    </div>
   );
 }

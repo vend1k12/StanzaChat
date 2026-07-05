@@ -1,34 +1,24 @@
 "use client";
 
-import { LogOut, MessageSquare, Plus } from "lucide-react";
+import { LogOut, MessageSquare, Plus, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useViewer } from "@/components/workspace/viewer-context";
 import { signOut, useSession } from "@/lib/auth-client";
 import { useChats, useCreateChat } from "@/lib/hooks/use-chats";
 import { cn } from "@/lib/utils";
 
 /**
- * Left column — chat list + user menu (SPEC §5.1 sidebar).
+ * Left column — chat list + user menu (SPEC §5.1).
  *
- * - "New chat" calls the `createChat` mutation then navigates to the new
- *   chat's route.
- * - The chat list is fetched via `useChats()`; the selected chat
- *   (`selectedChatId`) is highlighted.
- * - The user menu (avatar) shows the current user from `useSession` and
- *   signs out via `authClient.signOut`, then redirects to the sign-in page.
+ * Warm-canvas editorial rail (see docs/agents/DESIGN.md): cream-soft
+ * background, serif brand mark, ULTRAWIDE-tracking eyebrow above the
+ * chat list, coral primary "New chat" button. The chat list is fetched
+ * via `useChats()` and the selected chat is highlighted with a
+ * surface-cream-strong pill.
  */
 export interface ChatSidebarProps {
   selectedChatId: string | null;
@@ -38,6 +28,7 @@ export function ChatSidebar({ selectedChatId }: ChatSidebarProps) {
   const { data: chats, isLoading } = useChats();
   const createChat = useCreateChat();
   const { data: session } = useSession();
+  const { isAdmin } = useViewer();
   const router = useRouter();
 
   function handleNewChat() {
@@ -53,8 +44,12 @@ export function ChatSidebar({ selectedChatId }: ChatSidebarProps) {
   }
 
   async function handleSignOut() {
-    await signOut();
-    router.push("/auth/sign-in");
+    try {
+      await signOut();
+      router.push("/auth/sign-in");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign out failed");
+    }
   }
 
   const user = session?.user;
@@ -70,24 +65,47 @@ export function ChatSidebar({ selectedChatId }: ChatSidebarProps) {
       : "?";
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center justify-between gap-2 p-3">
-        <span className="text-sm font-semibold">StanzaChat</span>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={handleNewChat}
-          disabled={createChat.isPending}
-          aria-label="New chat"
-          data-testid="new-chat"
+    <aside className="flex h-full w-72 shrink-0 flex-col border-r border-hairline bg-surface-soft text-ink">
+      <div className="flex items-center justify-between px-5 pt-6 pb-4">
+        <Link
+          href="/chats"
+          className="flex items-center gap-2 text-ink hover:opacity-80"
         >
-          <Plus className="size-4" />
-          New
-        </Button>
+          <span className="spike-mark" aria-hidden />
+          <span className="font-display text-[19px] leading-none tracking-tight">
+            StanzaChat
+          </span>
+        </Link>
+        {isAdmin ? (
+          <Link
+            href="/admin"
+            aria-label="Instance admin"
+            title="Instance admin"
+            className="inline-flex items-center gap-1 rounded-full border border-coral/40 bg-coral/10 px-2 py-1 font-mono text-[10px] tracking-widest text-coral uppercase transition hover:bg-coral/15"
+          >
+            <ShieldCheck className="size-3" />
+            admin
+          </Link>
+        ) : null}
       </div>
 
-      <ScrollArea className="flex-1">
-        <nav className="flex flex-col gap-1 p-2">
+      <div className="px-4 pb-3">
+        <button
+          type="button"
+          onClick={handleNewChat}
+          disabled={createChat.isPending}
+          data-testid="new-chat"
+          className="group inline-flex w-full items-center justify-center gap-2 rounded-lg bg-coral px-3 py-2.5 text-sm font-medium text-on-primary shadow-[0_10px_20px_-14px_rgba(204,120,92,0.9)] transition hover:bg-coral-active disabled:opacity-60"
+        >
+          <Plus className="size-4 transition group-hover:rotate-90" />
+          New chat
+        </button>
+      </div>
+
+      <p className="eyebrow px-6 pt-4 pb-2">Conversations</p>
+
+      <nav className="flex-1 overflow-y-auto px-3 pb-3">
+        <ul className="flex flex-col gap-1">
           {isLoading ? (
             <>
               <Skeleton className="h-9 w-full" />
@@ -96,57 +114,56 @@ export function ChatSidebar({ selectedChatId }: ChatSidebarProps) {
             </>
           ) : chats && chats.length > 0 ? (
             chats.map((chat) => (
-              <button
-                key={chat.id}
-                type="button"
-                onClick={() => router.push(`/chats/${chat.id}`)}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-                  chat.id === selectedChatId
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                )}
-              >
-                <MessageSquare className="size-4 shrink-0 opacity-70" />
-                <span className="truncate">{chat.title}</span>
-              </button>
+              <li key={chat.id}>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/chats/${chat.id}`)}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
+                    chat.id === selectedChatId
+                      ? "bg-surface-cream-strong text-ink"
+                      : "text-body hover:bg-surface-card hover:text-ink",
+                  )}
+                >
+                  <MessageSquare className="size-3.5 shrink-0 opacity-60" />
+                  <span className="truncate">{chat.title || "Untitled"}</span>
+                </button>
+              </li>
             ))
           ) : (
-            <p className="p-2 text-xs text-muted-foreground">
-              No chats yet. Start a new one.
-            </p>
+            <li className="rounded-md border border-dashed border-hairline bg-canvas/50 px-3 py-6 text-center">
+              <p className="text-sm text-muted-ink">
+                No chats yet.
+                <br />
+                Start a new one.
+              </p>
+            </li>
           )}
-        </nav>
-      </ScrollArea>
+        </ul>
+      </nav>
 
-      <div className="border-t p-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors outline-none hover:bg-sidebar-accent/60"
-              aria-label="User menu"
-            >
-              <Avatar className="size-7">
-                {user?.image ? <AvatarImage src={user.image} /> : null}
-                <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-              </Avatar>
-              <span className="flex-1 truncate">
-                {user?.name ?? user?.email ?? "Account"}
-              </span>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel className="truncate">
-              {user?.email ?? "Signed in"}
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
-              <LogOut className="size-4" />
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="border-t border-hairline p-3">
+        <div className="flex items-center gap-3 rounded-lg bg-canvas p-2.5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-coral text-sm font-medium text-on-primary uppercase">
+            {initials}
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm font-medium text-ink">
+              {user?.name || user?.email || "Account"}
+            </span>
+            <span className="truncate font-mono text-[11px] text-muted-ink">
+              {user?.email}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            aria-label="Sign out"
+            className="rounded-md p-1.5 text-muted-ink transition hover:bg-surface-card hover:text-ink"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </div>
       </div>
     </aside>
   );

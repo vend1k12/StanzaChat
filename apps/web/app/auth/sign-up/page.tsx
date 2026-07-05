@@ -1,23 +1,34 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+
+import { AuthShell } from "@/components/auth/auth-shell";
 
 import { SignUpForm } from "./sign-up-form";
 
-export const metadata = { title: "Sign up — StanzaChat" };
+export const metadata: Metadata = { title: "Sign up — StanzaChat" };
 
 /**
- * `/auth/sign-up` — server shell that renders the client-side sign-up form
- * (Better-Auth flow via `authClient.signUp.email`).
- *
- * `<Suspense>` wraps the form because it reads `useSearchParams()`, which
- * would otherwise bail out static prerender at build time
- * (https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout).
+ * `/auth/sign-up` — editorial two-column shell. First successful sign-up
+ * becomes the instance admin (SPEC §5.4).
  */
 export default function SignUpPage() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center p-6">
+    <AuthShell
+      eyebrow="First run · Set up"
+      headline={
+        <>
+          A workspace
+          <br />
+          for your own
+          <br />
+          <span className="text-coral">thinking.</span>
+        </>
+      }
+      lede="Create your account to spin up a personal organization, a default workspace, and — if you are the very first user — instance-admin rights."
+    >
       <Suspense>
         <SignUpForm />
       </Suspense>
-    </main>
+    </AuthShell>
   );
 }

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 import { ChatComposer } from "./chat-composer";
 import { MessageList } from "./message-list";
@@ -32,12 +33,19 @@ export interface ChatViewProps {
 export function ChatView({ chatId }: ChatViewProps) {
   if (!chatId) {
     return (
-      <div className="flex flex-1 flex-col">
-        <div className="flex flex-1 items-center justify-center p-8 text-center">
-          <div className="max-w-sm space-y-1">
-            <p className="font-medium text-foreground">No chat selected</p>
-            <p className="text-sm text-muted-foreground">
-              Pick a conversation from the sidebar, or start a new chat.
+      <div className="flex flex-1 flex-col bg-canvas">
+        <div className="flex flex-1 items-center justify-center p-8">
+          <div className="max-w-md text-center">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-hairline bg-surface-card text-coral">
+              <span className="spike-mark scale-125" aria-hidden />
+            </div>
+            <h2 className="mt-6 font-display text-[32px] leading-tight tracking-[-0.02em] text-ink">
+              A blank page, on purpose
+            </h2>
+            <p className="mt-3 text-base leading-relaxed text-body">
+              Pick a conversation from the left, or start a new chat. Your
+              messages stream in on the left; anything the assistant builds
+              opens as a live artifact on the right.
             </p>
           </div>
         </div>
@@ -83,10 +91,25 @@ function ChatViewInner({ chatId }: { chatId: string }) {
     prevStatus.current = status;
   }, [status, chatId, queryClient]);
 
+  const busy = status === "submitted" || status === "streaming";
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
+    <div className="flex flex-1 flex-col bg-canvas">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-hairline bg-canvas/80 px-5 backdrop-blur-md">
         <ModelPicker />
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 font-mono text-[11px] tracking-widest uppercase transition",
+            busy ? "text-coral" : "text-muted-ink",
+          )}
+        >
+          <span
+            className={cn(
+              "size-1.5 rounded-full",
+              busy ? "animate-pulse bg-coral" : "bg-accent-teal",
+            )}
+          />
+          {busy ? "streaming" : "ready"}
+        </span>
       </header>
       <ScrollArea className="flex-1">
         <MessageList chatId={chatId} messages={messages} />

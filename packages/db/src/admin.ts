@@ -210,6 +210,22 @@ export async function updateUserAdminState(
       throw new Error(`user not found: ${targetUserId}`);
     }
 
+    // ── Preflight: last-admin guard (before touching state) ───────
+    const willDemoteAdmin =
+      updates.role !== undefined &&
+      updates.role !== current.role &&
+      current.role === "admin" &&
+      updates.role === "user";
+    if (willDemoteAdmin) {
+      const [countRow] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(userTable)
+        .where(eq(userTable.role, "admin"));
+      if ((countRow?.count ?? 0) <= 1) {
+        throw new Error("LAST_ADMIN");
+      }
+    }
+
     const setValues: Record<string, unknown> = { updatedAt: new Date() };
     if (updates.role !== undefined) setValues.role = updates.role;
     if (updates.banned !== undefined) {

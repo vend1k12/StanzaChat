@@ -20,16 +20,26 @@ export function MessageBubble({ role, content }: MessageBubbleProps) {
     <div
       className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}
     >
-      <div
-        data-slot="message-bubble"
-        className={cn(
-          "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm break-words whitespace-pre-wrap shadow-sm",
-          isUser
-            ? "rounded-br-sm bg-primary text-primary-foreground"
-            : "rounded-bl-sm bg-muted text-foreground",
-        )}
-      >
-        {content}
+      <div className="flex max-w-[85%] flex-col gap-1">
+        <span
+          className={cn(
+            "font-mono text-[10px] tracking-widest uppercase",
+            isUser ? "self-end text-muted-soft" : "self-start text-coral",
+          )}
+        >
+          {isUser ? "you" : "assistant"}
+        </span>
+        <div
+          data-slot="message-bubble"
+          className={cn(
+            "rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed break-words whitespace-pre-wrap",
+            isUser
+              ? "rounded-br-sm bg-coral text-on-primary"
+              : "rounded-bl-sm border border-hairline bg-surface-card text-body-strong",
+          )}
+        >
+          {content}
+        </div>
       </div>
     </div>
   );
