@@ -20,7 +20,8 @@
     "./client": "./src/client.ts",
     "./schema": "./src/schema.ts",
     "./setup": "./src/setup.ts",
-    "./slug": "./src/slug.ts"
+    "./slug": "./src/slug.ts",
+    "./admin": "./src/admin.ts"
   },
   "dependencies": {
     "@repo/shared": "workspace:*",

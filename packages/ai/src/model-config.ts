@@ -1,4 +1,5 @@
-import type { Db } from "@repo/db";
+import type { AuditContext, Db } from "@repo/db";
+import { writeAuditLog } from "@repo/db/admin";
 import { modelConfigurations } from "@repo/db/schema";
 import { createUlid } from "@repo/db/slug";
 import type { LlmProvider } from "@repo/shared/constants";
@@ -63,10 +64,15 @@ export async function getProvider(
 /**
  * Create a new provider configuration. If `isDefault` is true, all other
  * providers are un-defaulted first.
+ *
+ * SPEC §5.5 requires the matching `audit_logs` row to be written in the
+ * same transaction; callers must pass an `AuditContext`. The API key is
+ * never surfaced in the audit metadata — only its fingerprint presence.
  */
 export async function createProvider(
   db: Db,
   input: CreateProviderInput,
+  audit: AuditContext,
 ): Promise<string> {
   const id = createUlid();
 
@@ -90,6 +96,21 @@ export async function createProvider(
       isDefault: input.isDefault ?? false,
       enabled: true,
     });
+
+    await writeAuditLog(tx, {
+      actorUserId: audit.actorUserId,
+      action: "provider.create",
+      targetType: "model_configuration",
+      targetId: id,
+      metadata: {
+        provider: input.provider,
+        label: input.label,
+        hasApiKey: Boolean(input.encryptedApiKey),
+        isDefault: input.isDefault ?? false,
+        enabledModels: input.enabledModels,
+      },
+      ip: audit.ip,
+    });
   });
 
   return id;
@@ -97,11 +118,13 @@ export async function createProvider(
 
 /**
  * Update a provider configuration. Only provided fields are updated.
+ * Writes a `provider.update` audit row in the same transaction.
  */
 export async function updateProvider(
   db: Db,
   id: string,
   updates: Partial<CreateProviderInput> & { enabled?: boolean },
+  audit: AuditContext,
 ): Promise<void> {
   await db.transaction(async (tx) => {
     if (updates.isDefault) {
@@ -129,14 +152,45 @@ export async function updateProvider(
       .update(modelConfigurations)
       .set(setValues)
       .where(eq(modelConfigurations.id, id));
+
+    await writeAuditLog(tx, {
+      actorUserId: audit.actorUserId,
+      action: "provider.update",
+      targetType: "model_configuration",
+      targetId: id,
+      metadata: {
+        fields: {
+          label: updates.label,
+          baseUrl: updates.baseUrl,
+          isDefault: updates.isDefault,
+          enabled: updates.enabled,
+          enabledModels: updates.enabledModels,
+          apiKeyRotated: Boolean(updates.encryptedApiKey),
+        },
+      },
+      ip: audit.ip,
+    });
   });
 }
 
 /**
- * Delete a provider configuration.
+ * Delete a provider configuration and write the matching audit row.
  */
-export async function deleteProvider(db: Db, id: string): Promise<void> {
-  await db.delete(modelConfigurations).where(eq(modelConfigurations.id, id));
+export async function deleteProvider(
+  db: Db,
+  id: string,
+  audit: AuditContext,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.delete(modelConfigurations).where(eq(modelConfigurations.id, id));
+    await writeAuditLog(tx, {
+      actorUserId: audit.actorUserId,
+      action: "provider.delete",
+      targetType: "model_configuration",
+      targetId: id,
+      ip: audit.ip,
+    });
+  });
 }
 
 /**

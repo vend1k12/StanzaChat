@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { LLM_PROVIDERS } from "./constants.js";
+import {
+  AUDIT_ACTIONS,
+  INSTANCE_ROLES,
+  LLM_PROVIDERS,
+  REGISTRATION_MODES,
+} from "./constants.js";
 
 /**
  * API DTO schemas (SPEC §6).
@@ -69,3 +74,39 @@ export const updateProviderSchema = z.object({
   enabled: z.boolean().optional(),
 });
 export type UpdateProvider = z.infer<typeof updateProviderSchema>;
+
+// ── Admin users ─────────────────────────────────────────────────────
+
+export const updateUserSchema = z
+  .object({
+    role: z.enum(INSTANCE_ROLES).optional(),
+    banned: z.boolean().optional(),
+    banReason: z.string().max(500).nullable().optional(),
+  })
+  .refine((v) => v.role !== undefined || v.banned !== undefined, {
+    message: "at least one of `role` or `banned` must be provided",
+  });
+export type UpdateUser = z.infer<typeof updateUserSchema>;
+
+// ── Admin settings ──────────────────────────────────────────────────
+
+export const updateSettingsSchema = z.object({
+  registrationMode: z.enum(REGISTRATION_MODES),
+});
+export type UpdateSettings = z.infer<typeof updateSettingsSchema>;
+
+// ── Admin audit log query ───────────────────────────────────────────
+
+/**
+ * Query-string schema for `GET /api/admin/audit-logs`. Accepts strings
+ * because they arrive from `URLSearchParams`; coerces / validates once.
+ */
+export const auditLogsQuerySchema = z.object({
+  actorUserId: z.string().min(1).optional(),
+  action: z.enum(AUDIT_ACTIONS).optional(),
+  since: z.coerce.date().optional(),
+  until: z.coerce.date().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+export type AuditLogsQuery = z.infer<typeof auditLogsQuerySchema>;

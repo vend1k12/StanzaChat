@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./env": "./src/env.ts",
     "./errors": "./src/errors.ts",
-    "./constants": "./src/constants.ts"
+    "./constants": "./src/constants.ts",
+    "./rate-limit": "./src/rate-limit.ts"
   },
   "scripts": {
     "build": "tsc --build",
