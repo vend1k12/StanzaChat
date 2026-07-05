@@ -127,7 +127,7 @@ export default function AdminSettingsPage() {
                       current
                     </span>
                   ) : (
-                    <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-surface-cream-strong px-2.5 py-1 font-mono text-[10px] tracking-widest text-muted-ink uppercase">
+                    <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-canvas px-2.5 py-1 font-mono text-[10px] tracking-widest text-muted-ink uppercase transition group-hover:border-coral/40 group-hover:text-coral">
                       switch to {meta.label.toLowerCase()}
                     </span>
                   )}

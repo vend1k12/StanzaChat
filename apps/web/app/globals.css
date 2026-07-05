@@ -4,16 +4,19 @@
 @custom-variant dark (&:is(.dark *));
 
 /**
- * StanzaChat — warm-canvas editorial design system.
+ * StanzaChat — warm-canvas design system with proper dark mode.
  * See `docs/agents/DESIGN.md`.
  *
- * Palette anchored on cream canvas + coral CTA + dark-navy product
- * surfaces. Copernicus serif substituted with Fraunces (open source);
- * StyreneB sans substituted with Inter.
+ * Both themes use the SAME custom token names (`--canvas`, `--ink`,
+ * `--surface-card` …). In light mode they resolve to cream values; in
+ * dark mode the `.dark` block overrides them to warm-navy values.
+ * This means every Tailwind class (`bg-canvas`, `text-ink`, etc.) and
+ * every shadcn component that reads `--background`/`--foreground`
+ * automatically adapts to the active theme without per-component
+ * conditional logic.
  */
 
 @theme inline {
-  /* Base shadcn tokens — mapped to warm-canvas palette below. */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -34,7 +37,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Warm-canvas semantic tokens (see DESIGN.md). */
+  /* Semantic warm-canvas tokens exposed as Tailwind utilities. */
   --color-canvas: var(--canvas);
   --color-surface-soft: var(--surface-soft);
   --color-surface-card: var(--surface-card);
@@ -54,14 +57,12 @@
   --color-on-dark-soft: var(--on-dark-soft);
   --color-coral: var(--coral);
   --color-coral-active: var(--coral-active);
-  --color-coral-disabled: var(--coral-disabled);
   --color-accent-teal: var(--accent-teal);
   --color-accent-amber: var(--accent-amber);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
 
-  /* Sidebar tokens map onto the warm palette. */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -81,42 +82,50 @@
   --font-mono: var(--font-mono-code);
 }
 
+/* ── Light theme (default) ────────────────────────────────────────── */
 :root {
   --radius: 0.75rem;
 
-  /* Warm-canvas palette — hex from DESIGN.md. */
+  /* ── Surfaces (light = warm cream) ─── */
   --canvas: #faf9f5;
-  --surface-soft: #f5f0e8;
-  --surface-card: #efe9de;
-  --surface-cream-strong: #e8e0d2;
+  --surface-soft: #f4f0e8;
+  --surface-card: #ede7db;
+  --surface-cream-strong: #e4dace;
+
+  /* ── Product "dark" surfaces stay navy in BOTH themes ─── */
+  /* (used only in chat artifact chips, admin audit panel, etc.) */
   --surface-dark: #181715;
   --surface-dark-elevated: #252320;
   --surface-dark-soft: #1f1e1b;
 
+  /* ── Text (light) ─── */
   --ink: #141413;
   --body-strong: #252523;
   --body: #3d3d3a;
-  --muted-ink: #6c6a64;
+  --muted-ink: #6b6860;
   --muted-soft: #8e8b82;
 
-  --hairline: #e6dfd8;
-  --hairline-soft: #ebe6df;
+  /* ── Borders (light) ─── */
+  --hairline: #e2dbd1;
+  --hairline-soft: #e9e2d7;
 
+  /* ── Brand ─── */
   --coral: #cc785c;
   --coral-active: #a9583e;
-  --coral-disabled: #e6dfd8;
 
+  /* ── On-color ─── */
   --on-primary: #ffffff;
-  --on-dark: #faf9f5;
+  --on-dark: #f0ede6;
   --on-dark-soft: #a09d96;
 
+  /* ── Accent ─── */
   --accent-teal: #5db8a6;
   --accent-amber: #e8a55a;
   --success: #5db872;
-  --warning: #d4a017;
+  --warning: #c89b10;
   --error: #c64545;
 
-  /* shadcn base — bind semantic slots to the warm palette. */
+  /* ── shadcn semantic slots ─── */
   --background: var(--canvas);
   --foreground: var(--ink);
   --card: var(--canvas);
@@ -137,7 +146,6 @@
   --input: var(--hairline);
   --ring: var(--coral);
 
-  /* Sidebar / chat rail = surface-soft cream. */
   --sidebar: var(--surface-soft);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--coral);
@@ -148,128 +156,145 @@
   --sidebar-ring: var(--coral);
 }
 
+/* ── Dark theme ───────────────────────────────────────────────────── */
+/*
+ * Warm dark = deep navy-ink with coral accent. NOT pure black.
+ * The same custom token names override to dark values so every
+ * Tailwind class (`bg-canvas`, `text-ink`, `border-hairline`, …)
+ * and every shadcn component automatically adapts.
+ */
 .dark {
-  /* v0.1: theme toggle is available but the warm-canvas system is
-     canvas-first. The dark mode inverts to the navy product surfaces
-     for parity with the "code editor" mockups from DESIGN.md. */
-  --background: var(--surface-dark);
-  --foreground: var(--on-dark);
-  --card: var(--surface-dark-elevated);
-  --card-foreground: var(--on-dark);
-  --popover: var(--surface-dark-elevated);
-  --popover-foreground: var(--on-dark);
+  /* ── Surfaces (dark = warm navy) ─── */
+  --canvas: #1c1b18;
+  --surface-soft: #232119;
+  --surface-card: #2d2b23;
+  --surface-cream-strong: #363429;
+
+  /* Product dark surfaces become slightly lighter in dark theme
+     so they still contrast against the dark canvas. */
+  --surface-dark: #141310;
+  --surface-dark-elevated: #1e1c17;
+  --surface-dark-soft: #1a1815;
+
+  /* ── Text (dark) ─── */
+  --ink: #f0ede6;
+  --body-strong: #d8d4cc;
+  --body: #ada9a0;
+
+  /* ── Borders (dark) ─── */
+  --hairline: rgba(255, 255, 255, 0.09);
+  --hairline-soft: rgba(255, 255, 255, 0.05);
+
+  /* ── Brand stays coral ─── */
+  --coral: #d4856a;
+  --coral-active: #b86a50;
+
+  /* ── On-color ─── */
+  --on-primary: #ffffff;
+  --on-dark: #f0ede6;
+  --on-dark-soft: #7a7870;
+
+  /* ── Semantic slots ─── */
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--surface-card);
+  --card-foreground: var(--ink);
+  --popover: var(--surface-card);
+  --popover-foreground: var(--ink);
   --primary: var(--coral);
   --primary-foreground: var(--on-primary);
-  --secondary: var(--surface-dark-elevated);
-  --secondary-foreground: var(--on-dark);
-  --muted: var(--surface-dark-soft);
-  --muted-foreground: var(--on-dark-soft);
-  --accent: var(--surface-dark-elevated);
-  --accent-foreground: var(--on-dark);
-  --destructive: var(--error);
+  --secondary: var(--surface-cream-strong);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-soft);
+  --muted-foreground: var(--muted-ink);
+  --accent: var(--surface-cream-strong);
+  --accent-foreground: var(--ink);
+  --destructive: #e05555;
   --destructive-foreground: var(--on-primary);
-  --border: color-mix(in srgb, var(--on-dark) 10%, transparent);
-  --input: color-mix(in srgb, var(--on-dark) 12%, transparent);
+  --border: var(--hairline);
+  --input: var(--hairline);
   --ring: var(--coral);
-  --sidebar: var(--surface-dark-elevated);
-  --sidebar-foreground: var(--on-dark);
+
+  --sidebar: var(--surface-soft);
+  --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--coral);
   --sidebar-primary-foreground: var(--on-primary);
-  --sidebar-accent: var(--surface-dark-soft);
-  --sidebar-accent-foreground: var(--on-dark);
-  --sidebar-border: color-mix(in srgb, var(--on-dark) 10%, transparent);
+  --sidebar-accent: var(--surface-cream-strong);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--hairline);
   --sidebar-ring: var(--coral);
 }
 
+/* ── Base layer ───────────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  html,
+  html {
+    @apply scroll-smooth;
+  }
   body {
-    background: var(--canvas);
-    color: var(--ink);
+    @apply bg-canvas text-ink antialiased;
     font-family:
       var(--font-sans-body),
       Inter,
       ui-sans-serif,
       system-ui,
       -apple-system,
-      BlinkMacSystemFont,
       "Segoe UI",
-      Roboto,
-      "Helvetica Neue",
-      Arial,
       sans-serif;
-    font-feature-settings:
-      "ss01" 1,
-      "cv11" 1;
   }
   ::selection {
-    background: color-mix(in srgb, var(--coral) 35%, transparent);
+    background: color-mix(in srgb, var(--coral) 28%, transparent);
     color: var(--ink);
   }
-
-  /* Editorial serif for display headings by default. */
   h1,
   h2,
   h3,
   .font-display {
     font-family:
       var(--font-serif-display), "Tiempos Headline", "Cormorant Garamond",
-      "EB Garamond", Garamond, "Times New Roman", serif;
-    letter-spacing: -0.02em;
+      "EB Garamond", Georgia, serif;
+    letter-spacing: -0.025em;
     font-weight: 400;
     color: var(--ink);
   }
   h1 {
-    letter-spacing: -0.03em;
+    letter-spacing: -0.035em;
   }
-  code,
-  kbd,
-  pre,
-  .font-mono {
-    font-family:
-      var(--font-mono-code), "JetBrains Mono", ui-monospace, SFMono-Regular,
-      Menlo, Monaco, Consolas, monospace;
-  }
-
-  /* Warm scrollbars on the canvas surface. */
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--muted-ink) 25%, transparent);
+    background: color-mix(in srgb, var(--muted-ink) 30%, transparent);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: content-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in srgb, var(--muted-ink) 50%, transparent);
+    background: color-mix(in srgb, var(--muted-ink) 55%, transparent);
     background-clip: content-box;
   }
 }
 
-/* ── Utility primitives used across the warm-canvas surfaces ─────── */
-
+/* ── Design-system utilities ──────────────────────────────────────── */
 @layer components {
+  /* Anthropic-style 4-spoke radial spike mark (brand wordmark prefix). */
   .spike-mark {
     display: inline-block;
-    width: 0.85em;
-    height: 0.85em;
+    width: 0.9em;
+    height: 0.9em;
     position: relative;
-    color: var(--ink);
   }
-  .spike-mark::before,
-  .spike-mark::after {
+  .spike-mark::before {
     content: "";
     position: absolute;
     inset: 0;
-    background: currentColor;
+    background: var(--coral);
     clip-path: polygon(
       50% 0%,
       54% 46%,
@@ -281,28 +306,24 @@
       46% 46%
     );
   }
-  .spike-mark::after {
-    transform: rotate(45deg);
-  }
 
+  /* Uppercase eyebrow label — used above display headings. */
   .eyebrow {
-    font-family:
-      var(--font-sans-body), Inter, ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-sans-body), Inter, ui-sans-serif, sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.14em;
     font-size: 11px;
     font-weight: 500;
     color: var(--muted-ink);
   }
 
+  /* Hairline divider shorthand. */
   .hairline {
     border-color: var(--hairline);
   }
 
-  .surface-card {
-    background: var(--surface-card);
-    color: var(--ink);
-  }
+  /* Product "dark surface" card — navy in both light and dark.
+     Used for terminal mockups, audit log table, artifact code view. */
   .surface-dark {
     background: var(--surface-dark);
     color: var(--on-dark);
@@ -310,5 +331,9 @@
   .surface-dark-elevated {
     background: var(--surface-dark-elevated);
     color: var(--on-dark);
+  }
+  .surface-card {
+    background: var(--surface-card);
+    color: var(--ink);
   }
 }
