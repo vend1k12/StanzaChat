@@ -3,7 +3,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/**
+ * StanzaChat — warm-canvas editorial design system.
+ * See `docs/agents/DESIGN.md`.
+ *
+ * Palette anchored on cream canvas + coral CTA + dark-navy product
+ * surfaces. Copernicus serif substituted with Fraunces (open source);
+ * StyreneB sans substituted with Inter.
+ */
+
 @theme inline {
+  /* Base shadcn tokens — mapped to warm-canvas palette below. */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -23,11 +33,35 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
+
+  /* Warm-canvas semantic tokens (see DESIGN.md). */
+  --color-canvas: var(--canvas);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-card: var(--surface-card);
+  --color-surface-cream-strong: var(--surface-cream-strong);
+  --color-surface-dark: var(--surface-dark);
+  --color-surface-dark-elevated: var(--surface-dark-elevated);
+  --color-surface-dark-soft: var(--surface-dark-soft);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-body-strong: var(--body-strong);
+  --color-muted-ink: var(--muted-ink);
+  --color-muted-soft: var(--muted-soft);
+  --color-hairline: var(--hairline);
+  --color-hairline-soft: var(--hairline-soft);
+  --color-on-primary: var(--on-primary);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-soft: var(--on-dark-soft);
+  --color-coral: var(--coral);
+  --color-coral-active: var(--coral-active);
+  --color-coral-disabled: var(--coral-disabled);
+  --color-accent-teal: var(--accent-teal);
+  --color-accent-amber: var(--accent-amber);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  /* Sidebar tokens map onto the warm palette. */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -36,88 +70,245 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --font-display: var(--font-serif-display);
+  --font-sans: var(--font-sans-body);
+  --font-mono: var(--font-mono-code);
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+
+  /* Warm-canvas palette — hex from DESIGN.md. */
+  --canvas: #faf9f5;
+  --surface-soft: #f5f0e8;
+  --surface-card: #efe9de;
+  --surface-cream-strong: #e8e0d2;
+  --surface-dark: #181715;
+  --surface-dark-elevated: #252320;
+  --surface-dark-soft: #1f1e1b;
+
+  --ink: #141413;
+  --body-strong: #252523;
+  --body: #3d3d3a;
+  --muted-ink: #6c6a64;
+  --muted-soft: #8e8b82;
+
+  --hairline: #e6dfd8;
+  --hairline-soft: #ebe6df;
+
+  --coral: #cc785c;
+  --coral-active: #a9583e;
+  --coral-disabled: #e6dfd8;
+
+  --on-primary: #ffffff;
+  --on-dark: #faf9f5;
+  --on-dark-soft: #a09d96;
+
+  --accent-teal: #5db8a6;
+  --accent-amber: #e8a55a;
+  --success: #5db872;
+  --warning: #d4a017;
+  --error: #c64545;
+
+  /* shadcn base — bind semantic slots to the warm palette. */
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--canvas);
+  --card-foreground: var(--ink);
+  --popover: var(--canvas);
+  --popover-foreground: var(--ink);
+  --primary: var(--coral);
+  --primary-foreground: var(--on-primary);
+  --secondary: var(--surface-card);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-soft);
+  --muted-foreground: var(--muted-ink);
+  --accent: var(--surface-card);
+  --accent-foreground: var(--ink);
+  --destructive: var(--error);
+  --destructive-foreground: var(--on-primary);
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: var(--coral);
+
+  /* Sidebar / chat rail = surface-soft cream. */
+  --sidebar: var(--surface-soft);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--coral);
+  --sidebar-primary-foreground: var(--on-primary);
+  --sidebar-accent: var(--surface-cream-strong);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--coral);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* v0.1: theme toggle is available but the warm-canvas system is
+     canvas-first. The dark mode inverts to the navy product surfaces
+     for parity with the "code editor" mockups from DESIGN.md. */
+  --background: var(--surface-dark);
+  --foreground: var(--on-dark);
+  --card: var(--surface-dark-elevated);
+  --card-foreground: var(--on-dark);
+  --popover: var(--surface-dark-elevated);
+  --popover-foreground: var(--on-dark);
+  --primary: var(--coral);
+  --primary-foreground: var(--on-primary);
+  --secondary: var(--surface-dark-elevated);
+  --secondary-foreground: var(--on-dark);
+  --muted: var(--surface-dark-soft);
+  --muted-foreground: var(--on-dark-soft);
+  --accent: var(--surface-dark-elevated);
+  --accent-foreground: var(--on-dark);
+  --destructive: var(--error);
+  --destructive-foreground: var(--on-primary);
+  --border: color-mix(in srgb, var(--on-dark) 10%, transparent);
+  --input: color-mix(in srgb, var(--on-dark) 12%, transparent);
+  --ring: var(--coral);
+  --sidebar: var(--surface-dark-elevated);
+  --sidebar-foreground: var(--on-dark);
+  --sidebar-primary: var(--coral);
+  --sidebar-primary-foreground: var(--on-primary);
+  --sidebar-accent: var(--surface-dark-soft);
+  --sidebar-accent-foreground: var(--on-dark);
+  --sidebar-border: color-mix(in srgb, var(--on-dark) 10%, transparent);
+  --sidebar-ring: var(--coral);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html,
   body {
-    @apply bg-background text-foreground;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family:
+      var(--font-sans-body),
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
+    font-feature-settings:
+      "ss01" 1,
+      "cv11" 1;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--coral) 35%, transparent);
+    color: var(--ink);
+  }
+
+  /* Editorial serif for display headings by default. */
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family:
+      var(--font-serif-display), "Tiempos Headline", "Cormorant Garamond",
+      "EB Garamond", Garamond, "Times New Roman", serif;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+    color: var(--ink);
+  }
+  h1 {
+    letter-spacing: -0.03em;
+  }
+  code,
+  kbd,
+  pre,
+  .font-mono {
+    font-family:
+      var(--font-mono-code), "JetBrains Mono", ui-monospace, SFMono-Regular,
+      Menlo, Monaco, Consolas, monospace;
+  }
+
+  /* Warm scrollbars on the canvas surface. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--muted-ink) 25%, transparent);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--muted-ink) 50%, transparent);
+    background-clip: content-box;
+  }
+}
+
+/* ── Utility primitives used across the warm-canvas surfaces ─────── */
+
+@layer components {
+  .spike-mark {
+    display: inline-block;
+    width: 0.85em;
+    height: 0.85em;
+    position: relative;
+    color: var(--ink);
+  }
+  .spike-mark::before,
+  .spike-mark::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    clip-path: polygon(
+      50% 0%,
+      54% 46%,
+      100% 50%,
+      54% 54%,
+      50% 100%,
+      46% 54%,
+      0% 50%,
+      46% 46%
+    );
+  }
+  .spike-mark::after {
+    transform: rotate(45deg);
+  }
+
+  .eyebrow {
+    font-family:
+      var(--font-sans-body), Inter, ui-sans-serif, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted-ink);
+  }
+
+  .hairline {
+    border-color: var(--hairline);
+  }
+
+  .surface-card {
+    background: var(--surface-card);
+    color: var(--ink);
+  }
+  .surface-dark {
+    background: var(--surface-dark);
+    color: var(--on-dark);
+  }
+  .surface-dark-elevated {
+    background: var(--surface-dark-elevated);
+    color: var(--on-dark);
   }
 }

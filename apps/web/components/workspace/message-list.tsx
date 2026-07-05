@@ -107,9 +107,11 @@ export function MessageList({ chatId, messages }: MessageListProps) {
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
-        Start the conversation — your assistant can reply with text and rendered
-        artifacts.
+      <div className="mx-auto flex max-w-3xl flex-1 items-center justify-center p-10 text-center">
+        <p className="max-w-md text-sm leading-relaxed text-muted-ink">
+          Start the conversation — your assistant can reply with prose and
+          rendered artifacts. Try “Show me the welcome card”.
+        </p>
       </div>
     );
   }
@@ -122,7 +124,7 @@ export function MessageList({ chatId, messages }: MessageListProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-6">
       {parsed.map(({ message, text, segments }) => {
         if (message.role !== "assistant" || !segments) {
           return (
@@ -153,13 +155,24 @@ export function MessageList({ chatId, messages }: MessageListProps) {
                   data-testid="artifact-chip"
                   onClick={() => openArtifact(segment.identifier)}
                   className={cn(
-                    "inline-flex w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm shadow-xs transition-colors",
-                    "outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                    "group inline-flex w-fit items-center gap-3 rounded-xl border border-hairline bg-surface-dark px-4 py-3 text-left transition",
+                    "outline-none hover:border-coral/40 focus-visible:ring-[3px] focus-visible:ring-coral/30",
                   )}
                 >
-                  <Code className="size-4" />
-                  <span className="font-medium">{segment.title}</span>
-                  <span className="text-muted-foreground">· artifact</span>
+                  <span className="flex size-9 items-center justify-center rounded-lg bg-white/5 text-coral transition group-hover:bg-coral/15">
+                    <Code className="size-4" />
+                  </span>
+                  <span className="flex flex-col leading-tight">
+                    <span className="font-mono text-[10px] tracking-widest text-on-dark-soft uppercase">
+                      artifact
+                    </span>
+                    <span className="text-sm font-medium text-on-dark">
+                      {segment.title}
+                    </span>
+                  </span>
+                  <span className="ml-2 font-mono text-[11px] text-on-dark-soft transition group-hover:text-coral">
+                    open →
+                  </span>
                 </button>
               );
             })}

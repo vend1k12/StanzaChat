@@ -1,5 +1,11 @@
 import { getUserById, updateUserAdminState } from "@repo/db";
-import { NotFoundError, updateUserSchema, ValidationError } from "@repo/shared";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  updateUserSchema,
+  ValidationError,
+} from "@repo/shared";
 
 import { auditContextFor } from "@/lib/audit";
 import { wrapRoute } from "@/lib/http";
@@ -29,17 +35,40 @@ export async function PATCH(
     const target = await getUserById(ctx.db, id);
     if (!target) throw new NotFoundError("User", id);
 
+    // Self-lockout guards: the acting admin must never be able to
+    // demote or ban themselves out of the admin surface. Recovering
+    // from either state requires direct DB access (see docs), so we
+    // refuse the mutation up front rather than mine out the console.
+    if (id === ctx.session.user.id) {
+      if (parsed.data.role !== undefined && parsed.data.role !== "admin") {
+        throw new ForbiddenError("You cannot demote yourself");
+      }
+      if (parsed.data.banned === true) {
+        throw new ForbiddenError("You cannot ban yourself");
+      }
+    }
+
     const audit = await auditContextFor(ctx.session);
-    const result = await updateUserAdminState(
-      ctx.db,
-      id,
-      {
-        role: parsed.data.role,
-        banned: parsed.data.banned,
-        banReason: parsed.data.banReason ?? undefined,
-      },
-      audit,
-    );
+    let result;
+    try {
+      result = await updateUserAdminState(
+        ctx.db,
+        id,
+        {
+          role: parsed.data.role,
+          banned: parsed.data.banned,
+          banReason: parsed.data.banReason ?? undefined,
+        },
+        audit,
+      );
+    } catch (err) {
+      if (err instanceof Error && err.message === "LAST_ADMIN") {
+        throw new ConflictError(
+          "Cannot demote the last instance admin. Promote another user first.",
+        );
+      }
+      throw err;
+    }
 
     // Role changes invalidate cached scope entries; without this the
     // next request from `id` could hit the old cached instanceRole (see

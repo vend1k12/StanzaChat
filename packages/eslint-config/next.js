@@ -100,6 +100,14 @@ export const nextJsConfig = [
           whitelist: [
             // sonner `<Toaster/>` receives `className="toaster group"`
             "toaster",
+            // warm-canvas design-system utilities declared in
+            // apps/web/app/globals.css `@layer components` (DESIGN.md).
+            "spike-mark",
+            "eyebrow",
+            "hairline",
+            "surface-card",
+            "surface-dark",
+            "surface-dark-elevated",
           ],
         },
       ],

@@ -37,13 +37,17 @@ test.describe("admin panel", () => {
     await page.locator('button[type="submit"]').click();
     await page.waitForURL("**/chats", { waitUntil: "load" });
 
-    // ── Open admin panel ──────────────────────────────────────────
+    // ── Open admin panel and add a provider via the modal dialog ─────
     await page.goto("/admin/providers");
+    // The page header should load in the editorial serif style.
     await expect(
-      page.getByRole("heading", { name: "Add provider" }),
-    ).toBeVisible();
+      page.getByRole("heading", { name: "Bring your own model providers" }),
+    ).toBeVisible({ timeout: 10_000 });
 
-    // ── Add provider via the form (uses cookie session) ─────────────
+    // Open the dialog.
+    await page.getByTestId("open-add-provider").click();
+
+    // Fill the form inside the modal.
     await page.locator("#label").fill("Playwright Provider");
     await page.locator("#apiKey").fill("sk-secret-1234");
     await page.locator("#enabledModels").fill("mock");
@@ -90,5 +94,44 @@ test.describe("admin panel", () => {
     expect(body.error.code).toBe("forbidden");
 
     await context.close();
+  });
+
+  test("admin cannot demote or ban themselves (self-lockout guard)", async ({
+    page,
+  }) => {
+    // Sign in as the admin created in the first test.
+    await page.goto("/auth/sign-in");
+    await page.locator('input[name="email"]').fill(adminEmail);
+    await page.locator('input[name="password"]').fill(password);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL("**/chats", { waitUntil: "load" });
+
+    // Resolve the admin's own user id from the users list.
+    const usersRes = await page.request.get("/api/admin/users");
+    expect(usersRes.ok()).toBeTruthy();
+    const { users } = (await usersRes.json()) as {
+      users: { id: string; email: string; role: string }[];
+    };
+    const self = users.find((u) => u.email === adminEmail);
+    expect(self, "admin should appear in the users list").toBeTruthy();
+
+    // Self-demote must be refused with 403.
+    const demote = await page.request.patch(`/api/admin/users/${self!.id}`, {
+      data: { role: "user" },
+    });
+    expect(demote.status()).toBe(403);
+
+    // Self-ban must be refused with 403.
+    const ban = await page.request.patch(`/api/admin/users/${self!.id}`, {
+      data: { banned: true },
+    });
+    expect(ban.status()).toBe(403);
+
+    // The admin is still an admin — the mutation never applied.
+    const after = await page.request.get("/api/admin/users");
+    const stillAdmin = (
+      (await after.json()) as { users: { email: string; role: string }[] }
+    ).users.find((u) => u.email === adminEmail);
+    expect(stillAdmin?.role).toBe("admin");
   });
 });

@@ -70,16 +70,25 @@ export function ArtifactPanel({ artifactId }: ArtifactPanelProps) {
   if (!artifactId) return null;
 
   return (
-    <aside className="flex h-full w-2xl max-w-[50vw] shrink-0 flex-col border-l">
-      <div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b px-3">
-        <span className="truncate text-sm font-medium">
-          {artifact?.title || artifact?.identifier || "Artifact"}
-        </span>
+    <aside
+      className="flex h-full w-2xl max-w-[50vw] shrink-0 flex-col border-l border-hairline bg-canvas"
+      data-testid="artifact-panel"
+    >
+      <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-hairline px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="font-mono text-[10px] tracking-widest text-coral uppercase">
+            artifact
+          </span>
+          <span className="truncate font-display text-[18px] leading-none tracking-tight text-ink">
+            {artifact?.title || artifact?.identifier || "Artifact"}
+          </span>
+        </div>
         <Button
           size="icon"
           variant="ghost"
           onClick={() => setPanelOpen(false)}
           aria-label="Close artifact panel"
+          className="size-8"
         >
           <X className="size-4" />
         </Button>
@@ -99,7 +108,7 @@ export function ArtifactPanel({ artifactId }: ArtifactPanelProps) {
           </TabsList>
 
           <TabsContent value="preview" className="min-h-0 flex-1">
-            <div className="size-full overflow-hidden rounded-md border">
+            <div className="size-full overflow-hidden rounded-lg border border-hairline">
               <ArtifactSandbox
                 content={content}
                 artifactType={artifactType}
@@ -109,8 +118,8 @@ export function ArtifactPanel({ artifactId }: ArtifactPanelProps) {
           </TabsContent>
 
           <TabsContent value="code" className="min-h-0 flex-1">
-            <ScrollArea className="size-full rounded-md border">
-              <pre className="p-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap">
+            <ScrollArea className="size-full overflow-hidden rounded-lg border border-hairline bg-surface-dark">
+              <pre className="p-4 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-on-dark">
                 {content || "(empty)"}
               </pre>
             </ScrollArea>
