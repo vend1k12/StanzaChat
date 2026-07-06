@@ -69,7 +69,7 @@ function toSegments(events: ArtifactEvent[]): ParsedSegment[] {
 }
 
 export function MessageList({ chatId, messages }: MessageListProps) {
-  const { data: artifacts } = useArtifacts(chatId);
+  const { data: artifacts, refetch: refetchArtifacts } = useArtifacts(chatId);
   const setActiveArtifact = useUiStore((s) => s.setActiveArtifact);
   const setPanelOpen = useUiStore((s) => s.setPanelOpen);
 
@@ -116,8 +116,14 @@ export function MessageList({ chatId, messages }: MessageListProps) {
     );
   }
 
-  function openArtifact(identifier: string) {
-    const id = artifactIdByIdentifier.get(identifier);
+  async function openArtifact(identifier: string) {
+    let id = artifactIdByIdentifier.get(identifier);
+    if (!id) {
+      // The chip may have been clicked before the invalidated artifact
+      // list re-loaded. Force a refetch and try again once.
+      const { data } = await refetchArtifacts();
+      id = data?.find((a) => a.identifier === identifier)?.id;
+    }
     if (!id) return;
     setActiveArtifact(id);
     setPanelOpen(true);
