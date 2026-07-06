@@ -41,20 +41,25 @@ test.describe("workspace artifact round-trip", () => {
       data: {
         provider: "openai",
         label: "Mock",
-        enabledModels: ["mock"],
+        models: ["mock"],
         isDefault: true,
       },
     });
     expect(providerRes.ok(), "admin provider POST should succeed").toBeTruthy();
 
-    // ── 3. Create a new chat via the sidebar ───────────────────────────
+    // ── 3. Enter draft mode via the sidebar's "New chat" ───────────────
+    // In draft mode the URL stays on `/chats` — no server round-trip yet;
+    // the chat row is created on the first submit and the URL then swaps
+    // to `/chats/{id}` via `router.replace` without remounting.
     await page.getByTestId("new-chat").click();
-    await page.waitForURL("**/chats/*", { waitUntil: "load" });
+    await page.waitForURL("**/chats", { waitUntil: "load" });
 
-    // ── 4. Send a message → mock streams two artifact versions ─────────
+    // ── 4. Send a message → chat is created, URL swaps, mock streams
+    //       two artifact versions.
     const composer = page.getByLabel("Message input");
     await composer.fill("Show me the welcome card");
     await composer.press("Enter");
+    await page.waitForURL("**/chats/*", { waitUntil: "load" });
 
     // Wait for the assistant turn to finish (streaming → ready) and the
     // artifact chip to appear. The mock completes synchronously, but the

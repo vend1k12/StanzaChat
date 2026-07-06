@@ -47,10 +47,15 @@ test.describe("admin panel", () => {
     // Open the dialog.
     await page.getByTestId("open-add-provider").click();
 
-    // Fill the form inside the modal.
+    // Fill the form inside the modal. The models input is a tokenised
+    // chip editor — press Enter to commit each entry.
     await page.locator("#label").fill("Playwright Provider");
     await page.locator("#apiKey").fill("sk-secret-1234");
-    await page.locator("#enabledModels").fill("mock");
+    const modelInput = page.locator(
+      'input[placeholder="Add model id and press Enter"]',
+    );
+    await modelInput.fill("mock");
+    await modelInput.press("Enter");
     await page.getByTestId("provider-submit").click();
 
     // ── Provider appears in the table with a masked key ─────────────
