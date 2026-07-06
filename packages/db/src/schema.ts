@@ -305,7 +305,6 @@ export const modelConfigurations = pgTable("model_configurations", {
   encryptedApiKey: text(),
   keyIv: text(),
   keyTag: text(),
-  enabledModels: jsonb().$type<string[]>().notNull().default([]),
   isDefault: boolean().notNull().default(false),
   enabled: boolean().notNull().default(true),
   createdAt: timestamp({ mode: "date", withTimezone: true })
@@ -315,6 +314,46 @@ export const modelConfigurations = pgTable("model_configurations", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * Per-model settings for a provider (SPEC §4.2, extension for v0.1).
+ *
+ * Replaces the previous `model_configurations.enabled_models` string
+ * array so admins can attach generation defaults (temperature, top_p,
+ * max output tokens, system prompt) to each enabled model without
+ * re-editing them on every chat.
+ *
+ * `(provider_id, model_id)` is unique. `enabled = false` hides the
+ * model from the picker without deleting its settings.
+ */
+export const providerModels = pgTable(
+  "provider_models",
+  {
+    id: text().primaryKey(),
+    providerId: text()
+      .notNull()
+      .references(() => modelConfigurations.id, { onDelete: "cascade" }),
+    modelId: text().notNull(),
+    displayName: text(),
+    enabled: boolean().notNull().default(true),
+    temperature: text(),
+    topP: text(),
+    maxOutputTokens: integer(),
+    systemPrompt: text(),
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("provider_models_provider_id_model_id_idx").on(
+      t.providerId,
+      t.modelId,
+    ),
+  ],
+);
 
 export const auditLogs = pgTable("audit_logs", {
   id: text().primaryKey(),
@@ -369,6 +408,7 @@ export const schema = {
   artifacts,
   artifactVersions,
   modelConfigurations,
+  providerModels,
   auditLogs,
   instanceSettings,
 };
