@@ -66,7 +66,7 @@ export const createProviderSchema = z.object({
   label: z.string().min(1).max(100),
   baseUrl: z.string().url().optional().or(z.literal("")),
   apiKey: z.string().optional(),
-  enabledModels: z.array(z.string()).default([]),
+  models: z.array(z.string().min(1)).default([]),
   isDefault: z.boolean().default(false),
 });
 export type CreateProvider = z.infer<typeof createProviderSchema>;
@@ -75,11 +75,46 @@ export const updateProviderSchema = z.object({
   label: z.string().min(1).max(100).optional(),
   baseUrl: z.string().url().optional().or(z.literal("")),
   apiKey: z.string().optional(),
-  enabledModels: z.array(z.string()).optional(),
+  models: z.array(z.string().min(1)).optional(),
   isDefault: z.boolean().optional(),
   enabled: z.boolean().optional(),
 });
 export type UpdateProvider = z.infer<typeof updateProviderSchema>;
+
+/**
+ * Discover models against the provider's OpenAI-compatible endpoint.
+ * Used both from the Add Provider dialog (`baseUrl`/`apiKey` supplied
+ * inline, no `id` yet) and from the Edit dialog (`id` in the URL, key
+ * looked up server-side).
+ */
+export const discoverModelsSchema = z
+  .object({
+    provider: z.enum(LLM_PROVIDERS),
+    baseUrl: z.string().url().optional().or(z.literal("")),
+    apiKey: z.string().optional(),
+  })
+  .refine(
+    (v) =>
+      v.provider === "openai" ||
+      v.provider === "ollama" ||
+      Boolean(v.baseUrl),
+    { message: "Base URL is required for openai-compatible providers." },
+  );
+export type DiscoverModels = z.infer<typeof discoverModelsSchema>;
+
+/**
+ * Per-model settings update (SPEC §4.2 extension). `null` clears an
+ * override; `undefined` (field absent) leaves it untouched.
+ */
+export const updateProviderModelSchema = z.object({
+  displayName: z.string().max(200).nullable().optional(),
+  enabled: z.boolean().optional(),
+  temperature: z.number().min(0).max(2).nullable().optional(),
+  topP: z.number().min(0).max(1).nullable().optional(),
+  maxOutputTokens: z.number().int().positive().max(1_000_000).nullable().optional(),
+  systemPrompt: z.string().max(20_000).nullable().optional(),
+});
+export type UpdateProviderModel = z.infer<typeof updateProviderModelSchema>;
 
 // ── Admin users ─────────────────────────────────────────────────────
 
