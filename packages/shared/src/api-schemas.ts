@@ -50,6 +50,12 @@ export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export const chatStreamSchema = z.object({
   chatId: z.string().min(1),
   messages: z.array(z.unknown()).min(1),
+  /**
+   * Optional per-turn override — the picker in the header can send the
+   * currently-selected model id. Falls back to the chat's persisted
+   * `modelConfigId`, then to the instance default provider.
+   */
+  modelId: z.string().min(1).nullable().optional(),
 });
 export type ChatStream = z.infer<typeof chatStreamSchema>;
 

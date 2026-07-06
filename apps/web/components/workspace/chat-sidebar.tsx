@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, MessageSquare, Plus, ShieldCheck } from "lucide-react";
+import { LogOut, MessageSquare, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useViewer } from "@/components/workspace/viewer-context";
 import { signOut, useSession } from "@/lib/auth-client";
-import { useChats, useCreateChat } from "@/lib/hooks/use-chats";
+import { useChats, useCreateChat, useDeleteChat } from "@/lib/hooks/use-chats";
 import { cn } from "@/lib/utils";
 
 /**
@@ -28,6 +28,7 @@ export interface ChatSidebarProps {
 export function ChatSidebar({ selectedChatId }: ChatSidebarProps) {
   const { data: chats, isLoading } = useChats();
   const createChat = useCreateChat();
+  const deleteChat = useDeleteChat();
   const { data: session } = useSession();
   const { isAdmin } = useViewer();
   const router = useRouter();
@@ -114,23 +115,49 @@ export function ChatSidebar({ selectedChatId }: ChatSidebarProps) {
               <Skeleton className="h-9 w-full" />
             </>
           ) : chats && chats.length > 0 ? (
-            chats.map((chat) => (
-              <li key={chat.id}>
-                <button
-                  type="button"
-                  onClick={() => router.push(`/chats/${chat.id}`)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
-                    chat.id === selectedChatId
-                      ? "bg-surface-cream-strong text-ink"
-                      : "text-body hover:bg-surface-card hover:text-ink",
-                  )}
-                >
-                  <MessageSquare className="size-3.5 shrink-0 opacity-60" />
-                  <span className="truncate">{chat.title || "Untitled"}</span>
-                </button>
-              </li>
-            ))
+            chats.map((chat) => {
+              const active = chat.id === selectedChatId;
+              return (
+                <li key={chat.id} className="group relative">
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/chats/${chat.id}`)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md px-3 py-2 pr-8 text-left text-sm transition-colors",
+                      active
+                        ? "bg-surface-cream-strong text-ink"
+                        : "text-body hover:bg-surface-card hover:text-ink",
+                    )}
+                  >
+                    <MessageSquare className="size-3.5 shrink-0 opacity-60" />
+                    <span className="truncate">{chat.title || "Untitled"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Delete ${chat.title || "chat"}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (
+                        confirm(
+                          `Delete "${chat.title || "Untitled"}"? Messages and artifacts are removed.`,
+                        )
+                      ) {
+                        deleteChat.mutate(chat.id, {
+                          onSuccess: () => {
+                            if (active) router.push("/chats");
+                          },
+                          onError: (err) =>
+                            toast.error(err.message || "Failed to delete"),
+                        });
+                      }
+                    }}
+                    className="absolute top-1/2 right-1.5 hidden -translate-y-1/2 rounded-md p-1 text-muted-ink transition group-hover:inline-flex hover:bg-error/10 hover:text-error"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </li>
+              );
+            })
           ) : (
             <li className="rounded-md border border-dashed border-hairline bg-canvas/50 px-3 py-6 text-center">
               <p className="text-sm text-muted-ink">

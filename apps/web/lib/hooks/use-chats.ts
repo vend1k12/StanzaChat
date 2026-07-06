@@ -5,14 +5,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, apiPost } from "@/lib/api";
 
 /**
- * TanStack Query hooks for the chats collection (SPEC §6).
+ * TanStack Query hooks for the chats collection (SPEC §5.1, §6).
  *
- * The `GET /api/chats` response is `{ chats: ChatDto[] }` and
- * `POST /api/chats` returns `{ id: string }` (201). We keep the DTO
- * shape in sync with the `chats` Drizzle row surfaced by `listChats`.
+ * `GET /api/chats` → `{ chats: ChatDto[] }`
+ * `POST /api/chats` → `{ id: string }`
+ * `GET /api/chats/:id` → `{ chat: ChatDto }`
+ * `PATCH /api/chats/:id` → `{ ok: true }` (title, system prompt, model)
+ * `DELETE /api/chats/:id` → `{ ok: true }`
+ * `GET /api/chats/:id/messages` → `{ messages: MessageDto[] }`
  */
 
-/** Chat row as returned by `GET /api/chats`. */
 export interface ChatDto {
   id: string;
   workspaceId: string;
@@ -24,20 +26,62 @@ export interface ChatDto {
   updatedAt: string;
 }
 
+export interface MessageDto {
+  id: string;
+  chatId: string;
+  role: "system" | "user" | "assistant";
+  content: string;
+  tokenUsage: {
+    prompt?: number;
+    completion?: number;
+    total?: number;
+  } | null;
+  modelId: string | null;
+  createdAt: string;
+}
+
 interface ChatsResponse {
   chats: ChatDto[];
 }
-
+interface ChatResponse {
+  chat: ChatDto;
+}
+interface MessagesResponse {
+  messages: MessageDto[];
+}
 interface CreateChatResponse {
   id: string;
 }
 
-/** List the current user's chats (newest-updated first, per `listChats`). */
+/** List the current user's chats. */
 export function useChats() {
   return useQuery({
     queryKey: ["chats"],
     queryFn: () => apiFetch<ChatsResponse>("/api/chats"),
     select: (data) => data.chats,
+  });
+}
+
+/** Fetch a single chat (title, model, prompt). */
+export function useChat(chatId: string | null) {
+  return useQuery({
+    queryKey: ["chats", chatId],
+    enabled: Boolean(chatId),
+    queryFn: () => apiFetch<ChatResponse>(`/api/chats/${chatId}`),
+    select: (data) => data.chat,
+  });
+}
+
+/** Fetch persisted chat history (used to hydrate `useChat` on mount). */
+export function useChatMessages(chatId: string | null) {
+  return useQuery({
+    queryKey: ["chats", chatId, "messages"],
+    enabled: Boolean(chatId),
+    queryFn: () => apiFetch<MessagesResponse>(`/api/chats/${chatId}/messages`),
+    select: (data) => data.messages,
+    // Keep the persisted history stable while the user drafts a reply —
+    // `useChat` maintains the live view. We only invalidate on completion.
+    staleTime: 60_000,
   });
 }
 
@@ -57,6 +101,43 @@ export function useCreateChat() {
         workspaceId: "advisory",
         ...input,
       }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["chats"] });
+    },
+  });
+}
+
+/** Rename / re-model / update system prompt on an existing chat. */
+export function useUpdateChat() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      id: string;
+      updates: {
+        title?: string;
+        systemPrompt?: string | null;
+        modelConfigId?: string | null;
+      };
+    }) =>
+      apiFetch<{ ok: true }>(`/api/chats/${input.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(input.updates),
+      }),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["chats"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["chats", variables.id],
+      });
+    },
+  });
+}
+
+/** Delete a chat. */
+export function useDeleteChat() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ ok: true }>(`/api/chats/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["chats"] });
     },

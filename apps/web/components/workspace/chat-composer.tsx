@@ -1,6 +1,6 @@
 "use client";
 
-import { Send } from "lucide-react";
+import { Send, Square } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -9,18 +9,25 @@ import { Textarea } from "@/components/ui/textarea";
 /**
  * Chat input composer (SPEC §5.1).
  *
- * Enter sends (Shift+Enter for a newline). Submitting calls the AI SDK
- * v2 `sendMessage({ text })` from the parent `useChat` hook. Disabled
- * while the assistant is streaming (`status !== "ready"`).
+ * Enter sends (Shift+Enter for newline). While the assistant streams,
+ * the send button flips to a Stop control that calls `onStop`.
  */
 export interface ChatComposerProps {
   status: "submitted" | "streaming" | "ready" | "error";
+  canSend: boolean;
   onSend: (text: string) => void;
+  onStop?: () => void;
 }
 
-export function ChatComposer({ status, onSend }: ChatComposerProps) {
+export function ChatComposer({
+  status,
+  canSend,
+  onSend,
+  onStop,
+}: ChatComposerProps) {
   const [value, setValue] = useState("");
-  const disabled = status === "submitted" || status === "streaming";
+  const busy = status === "submitted" || status === "streaming";
+  const disabled = busy || !canSend;
 
   function submit() {
     const text = value.trim();
@@ -48,7 +55,7 @@ export function ChatComposer({ status, onSend }: ChatComposerProps) {
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={
-            disabled
+            busy
               ? "Assistant is responding…"
               : "Message the assistant…  (Enter to send · Shift+Enter for newline)"
           }
@@ -56,16 +63,29 @@ export function ChatComposer({ status, onSend }: ChatComposerProps) {
           className="max-h-48 min-h-11 flex-1 resize-none border-0 bg-transparent px-2 py-1.5 text-[15px] shadow-none focus-visible:ring-0 dark:bg-transparent"
           aria-label="Message input"
         />
-        <Button
-          type="button"
-          size="icon"
-          onClick={submit}
-          disabled={disabled || value.trim().length === 0}
-          aria-label="Send message"
-          className="size-10 rounded-xl"
-        >
-          <Send className="size-4" />
-        </Button>
+        {busy && onStop ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={onStop}
+            aria-label="Stop generating"
+            className="size-10 rounded-xl border-coral/50 text-coral hover:bg-coral/10"
+          >
+            <Square className="size-4 fill-current" />
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="icon"
+            onClick={submit}
+            disabled={disabled || value.trim().length === 0}
+            aria-label="Send message"
+            className="size-10 rounded-xl"
+          >
+            <Send className="size-4" />
+          </Button>
+        )}
       </div>
       <p className="mx-auto mt-2 max-w-3xl px-1 text-[11px] text-muted-soft">
         Artifacts open in the right panel. Model output runs in an

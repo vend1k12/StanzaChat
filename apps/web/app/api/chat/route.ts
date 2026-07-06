@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       throw new ValidationError(parsed.error.message);
     }
-    const { chatId, messages } = parsed.data;
+    const { chatId, messages, modelId } = parsed.data;
     const uiMessages = messages as UIMessage[];
 
     const chat = await getChat(ctx.db, ctx.scope, chatId);
@@ -77,6 +77,7 @@ export async function POST(request: Request) {
     const model = (await resolveChatModel({
       db: ctx.db,
       chatModelConfigId: chat.modelConfigId,
+      modelId: modelId ?? null,
       env,
     })) as LanguageModel;
 
