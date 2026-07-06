@@ -10,7 +10,10 @@ import { ChatView } from "./chat-view";
  * Top-level three-column workspace layout (SPEC §5.3).
  *
  * - Left: chat sidebar (chat list + user menu).
- * - Center: active chat view (message list + composer + model picker).
+ * - Center: active chat view. Renders a draft composer when
+ *   `selectedChatId` is `null` — the first submit creates the chat via
+ *   `POST /api/chats` and swaps the URL to `/chats/{id}` without
+ *   remounting the stream (see `ChatView`).
  * - Right: artifact panel — only rendered when the panel is open AND an
  *   active artifact id is set in the `useUiStore`.
  *
