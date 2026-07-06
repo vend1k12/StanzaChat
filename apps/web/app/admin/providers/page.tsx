@@ -68,7 +68,10 @@ import { cn } from "@/lib/utils";
  * `/v1/models` endpoint server-side (openai / openai-compatible / ollama)
  * so admins don't hand-type model ids.
  */
-type FormMode = { kind: "closed" } | { kind: "add" } | { kind: "edit"; provider: ProviderRecord };
+type FormMode =
+  | { kind: "closed" }
+  | { kind: "add" }
+  | { kind: "edit"; provider: ProviderRecord };
 
 export default function AdminProvidersPage() {
   const { data: providers, isLoading, error } = useProviders();
@@ -79,9 +82,8 @@ export default function AdminProvidersPage() {
   const defaultId = providers?.find((p) => p.isDefault)?.id ?? null;
 
   const [formMode, setFormMode] = useState<FormMode>({ kind: "closed" });
-  const [modelSettingsFor, setModelSettingsFor] = useState<ProviderRecord | null>(
-    null,
-  );
+  const [modelSettingsFor, setModelSettingsFor] =
+    useState<ProviderRecord | null>(null);
 
   return (
     <div className="flex flex-col gap-10">
@@ -471,7 +473,9 @@ function ProviderFormDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-display text-[26px] leading-tight tracking-tight">
-            {isEdit ? `Edit provider${editing ? ` — ${editing.label}` : ""}` : "Add a model provider"}
+            {isEdit
+              ? `Edit provider${editing ? ` — ${editing.label}` : ""}`
+              : "Add a model provider"}
           </DialogTitle>
           <DialogDescription>
             {isEdit
@@ -559,7 +563,11 @@ function ProviderFormDialog({
               id="apiKey"
               type="password"
               autoComplete="off"
-              placeholder={isEdit && editing?.hasApiKey ? "Leave blank to keep current" : "sk-…"}
+              placeholder={
+                isEdit && editing?.hasApiKey
+                  ? "Leave blank to keep current"
+                  : "sk-…"
+              }
               value={form.apiKey}
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, apiKey: event.target.value }))
@@ -702,9 +710,7 @@ function ModelChipEditor({
     <div className="flex flex-col gap-2 rounded-lg border border-hairline bg-surface-soft p-3">
       <div className="flex flex-wrap gap-1.5">
         {filtered.length === 0 ? (
-          <p className="px-1 py-2 text-[12px] text-muted-ink">
-            No models yet.
-          </p>
+          <p className="px-1 py-2 text-[12px] text-muted-ink">No models yet.</p>
         ) : (
           filtered.map((model) => (
             <span
@@ -773,8 +779,8 @@ function ModelSettingsDialog({
             {provider.label} — per-model settings
           </DialogTitle>
           <DialogDescription>
-            Attach generation defaults to each enabled model. Chats using
-            the model inherit these unless the chat has its own overrides.
+            Attach generation defaults to each enabled model. Chats using the
+            model inherit these unless the chat has its own overrides.
           </DialogDescription>
         </DialogHeader>
 
@@ -878,7 +884,9 @@ function ModelSettingRow({
               id={`${model.id}-name`}
               value={draft.displayName}
               placeholder={model.modelId}
-              onChange={(e) => setDraft({ ...draft, displayName: e.target.value })}
+              onChange={(e) =>
+                setDraft({ ...draft, displayName: e.target.value })
+              }
             />
           </div>
           <label className="flex items-center gap-2 self-end text-sm text-body">
@@ -886,7 +894,9 @@ function ModelSettingRow({
               type="checkbox"
               className="size-4 accent-[--coral]"
               checked={draft.enabled}
-              onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })}
+              onChange={(e) =>
+                setDraft({ ...draft, enabled: e.target.checked })
+              }
             />
             Enabled (visible in the model picker)
           </label>
@@ -896,7 +906,9 @@ function ModelSettingRow({
               id={`${model.id}-temp`}
               value={draft.temperature}
               placeholder="0.0 – 2.0"
-              onChange={(e) => setDraft({ ...draft, temperature: e.target.value })}
+              onChange={(e) =>
+                setDraft({ ...draft, temperature: e.target.value })
+              }
             />
           </div>
           <div className="flex flex-col gap-1">

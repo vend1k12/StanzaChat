@@ -46,10 +46,7 @@ export async function PATCH(
 
     const ctx = await requireInstanceAdmin();
     const { id } = await params;
-    const updates = parseWithSchema(
-      updateProviderSchema,
-      await request.json(),
-    );
+    const updates = parseWithSchema(updateProviderSchema, await request.json());
 
     // Verify the target exists so we return 404 instead of a silent no-op.
     const existing = await getProvider(ctx.db, id);

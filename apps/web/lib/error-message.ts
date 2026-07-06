@@ -30,7 +30,10 @@ const FRIENDLY: Record<string, string> = {
     "The provider replied with an unexpected shape. Verify it's OpenAI-compatible.",
 };
 
-export function errorMessage(err: unknown, fallback = "Something went wrong."): string {
+export function errorMessage(
+  err: unknown,
+  fallback = "Something went wrong.",
+): string {
   if (err instanceof ApiError) {
     const friendly = FRIENDLY[err.code];
     if (friendly) return friendly;

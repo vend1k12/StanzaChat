@@ -4,11 +4,7 @@ import {
   discoverModels,
   getProviderById,
 } from "@repo/ai";
-import {
-  NotFoundError,
-  parseEnv,
-  ValidationError,
-} from "@repo/shared";
+import { NotFoundError, parseEnv, ValidationError } from "@repo/shared";
 
 import { wrapRoute } from "@/lib/http";
 import { adminLimiter, rateLimitResponse, requestIp } from "@/lib/rate-limit";
@@ -58,7 +54,9 @@ export async function POST(
       return Response.json({ models });
     } catch (err) {
       if (err instanceof DiscoverError) {
-        throw new ValidationError(err.message, { code: `discover.${err.code}` });
+        throw new ValidationError(err.message, {
+          code: `discover.${err.code}`,
+        });
       }
       throw err;
     }

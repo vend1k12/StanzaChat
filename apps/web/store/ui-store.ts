@@ -28,10 +28,7 @@ interface UiState {
 
   /** Per-surface view mode toggle. */
   adminViewMode: Record<"users" | "audit", AdminViewMode>;
-  setAdminViewMode: (
-    surface: "users" | "audit",
-    mode: AdminViewMode,
-  ) => void;
+  setAdminViewMode: (surface: "users" | "audit", mode: AdminViewMode) => void;
 }
 
 /**

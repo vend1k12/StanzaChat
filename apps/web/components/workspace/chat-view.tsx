@@ -6,13 +6,7 @@ import { DefaultChatTransport } from "ai";
 import { AlertTriangle, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
