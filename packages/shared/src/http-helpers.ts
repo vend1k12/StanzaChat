@@ -1,15 +1,23 @@
 import { z, type ZodError, type ZodType } from "zod";
 
-import { ValidationError, type ValidationDetails } from "./errors.js";
+import { type ValidationDetails, ValidationError } from "./errors.js";
 
 /**
  * Flatten a `ZodError` into `{ fieldErrors, formErrors }` — same shape
  * as `zod`'s built-in flatten, but resilient to nested paths and
  * guaranteed to be JSON-serialisable (numeric array indices become
  * dotted keys like `models.0`).
+ *
+ * Uses a `Map` internally because the keys are dynamic strings
+ * (arbitrary field paths from external input) — a plain object would
+ * trip ESLint's `security/detect-object-injection` and, more
+ * importantly, is the wrong shape per project rule `ts-set-map`:
+ * runtime membership → Set/Map, static tables → Record. The Map is
+ * materialised into a plain `Record<string, string[]>` at the very end
+ * so the wire payload stays JSON-friendly.
  */
 export function flattenZodError(err: ZodError): ValidationDetails {
-  const fieldErrors: Record<string, string[]> = {};
+  const buckets = new Map<string, string[]>();
   const formErrors: string[] = [];
   for (const issue of err.issues) {
     if (issue.path.length === 0) {
@@ -17,11 +25,11 @@ export function flattenZodError(err: ZodError): ValidationDetails {
       continue;
     }
     const key = issue.path.map((p) => String(p)).join(".");
-    const bucket = fieldErrors[key];
-    if (bucket) bucket.push(issue.message);
-    else fieldErrors[key] = [issue.message];
+    const existing = buckets.get(key);
+    if (existing) existing.push(issue.message);
+    else buckets.set(key, [issue.message]);
   }
-  return { fieldErrors, formErrors };
+  return { fieldErrors: Object.fromEntries(buckets), formErrors };
 }
 
 /**
