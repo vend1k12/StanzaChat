@@ -8,12 +8,13 @@ import { createAuthClient } from "better-auth/react";
  * to call auth endpoints. The `organizationClient` plugin mirrors the
  * server-side `organization` plugin.
  */
-// Type annotation is necessary because the inferred type references
-// internal better-auth module paths that tsc cannot resolve portably.
-export const authClient: ReturnType<typeof createAuthClient> = createAuthClient(
-  {
-    plugins: [organizationClient()],
-  },
-);
+// The client is not exported — the `ReturnType<typeof createAuthClient>`
+// contract would be a coupled implementation detail (project rule
+// ts-no-return-type). Consumers reach for the destructured methods
+// below, whose types are inferred at the local binding without
+// re-publishing the factory's return shape as a public alias.
+const authClient = createAuthClient({
+  plugins: [organizationClient()],
+});
 
 export const { signIn, signUp, signOut, useSession } = authClient;

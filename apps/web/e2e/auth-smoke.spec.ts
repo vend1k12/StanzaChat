@@ -29,11 +29,11 @@ test.describe("auth pages smoke", () => {
     await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
-  test("home page links to auth pages", async ({ page }) => {
+  test("home redirects anonymous visitor to sign-in", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.locator('a[href="/auth/sign-in"]')).toBeVisible();
-    await expect(page.locator('a[href="/auth/sign-up"]')).toBeVisible();
+    await expect(page).toHaveURL(/\/auth\/sign-in\?redirect=(?:%2F|\/)chats$/);
+    await expect(page.locator('input[name="email"]')).toBeVisible();
   });
 
   test("sign-up form accepts input", async ({ page }) => {

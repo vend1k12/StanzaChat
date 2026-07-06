@@ -12,9 +12,20 @@ import { getAuth } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-let cachedHandlers: ReturnType<typeof toNextJsHandler> | undefined;
+/**
+ * Minimal shape of the Next.js auth handler pair returned by
+ * `toNextJsHandler`. Named locally instead of inheriting via
+ * `ReturnType<typeof toNextJsHandler>` because that pattern couples
+ * consumers to an implementation helper (project rule ts-no-return-type).
+ */
+interface NextAuthHandlers {
+  GET: (req: NextRequest) => Promise<Response>;
+  POST: (req: NextRequest) => Promise<Response>;
+}
 
-function getHandlers() {
+let cachedHandlers: NextAuthHandlers | undefined;
+
+function getHandlers(): NextAuthHandlers {
   if (!cachedHandlers) {
     cachedHandlers = toNextJsHandler(getAuth());
   }
