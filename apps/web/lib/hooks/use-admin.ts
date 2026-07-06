@@ -77,6 +77,105 @@ export function useDeleteProvider() {
   });
 }
 
+// ── Discover / per-model settings ───────────────────────────────────
+
+interface DiscoverResponse {
+  models: string[];
+}
+
+/**
+ * `POST /api/admin/providers/discover` — probe a not-yet-saved provider
+ * (Add dialog). Body carries the provider selector + optional baseUrl /
+ * apiKey; server proxies the OpenAI-compatible `/v1/models` call.
+ */
+export function useDiscoverModels() {
+  return useMutation({
+    mutationFn: (input: {
+      provider: ProviderRecord["provider"];
+      baseUrl?: string;
+      apiKey?: string;
+    }) =>
+      apiFetch<DiscoverResponse>("/api/admin/providers/discover", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+  });
+}
+
+/**
+ * `POST /api/admin/providers/:id/discover` — re-probe an existing
+ * provider using its stored key (Edit dialog "Refresh models" button).
+ */
+export function useDiscoverProviderModels() {
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<DiscoverResponse>(`/api/admin/providers/${id}/discover`, {
+        method: "POST",
+      }),
+  });
+}
+
+interface ProviderModelDto {
+  id: string;
+  providerId: string;
+  modelId: string;
+  displayName: string | null;
+  enabled: boolean;
+  temperature: number | null;
+  topP: number | null;
+  maxOutputTokens: number | null;
+  systemPrompt: string | null;
+}
+
+interface ProviderModelsResponse {
+  models: ProviderModelDto[];
+}
+
+/** List per-model settings for a saved provider. */
+export function useProviderModels(providerId: string | null) {
+  return useQuery({
+    queryKey: ["admin", "providers", providerId, "models"],
+    queryFn: () =>
+      apiFetch<ProviderModelsResponse>(
+        `/api/admin/providers/${providerId}/models`,
+      ),
+    enabled: Boolean(providerId),
+    select: (data) => data.models,
+  });
+}
+
+/** Patch a single per-model settings row. */
+export function useUpdateProviderModel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      providerId,
+      modelId,
+      updates,
+    }: {
+      providerId: string;
+      modelId: string;
+      updates: Partial<ProviderModelDto>;
+    }) =>
+      apiFetch<{ ok: true }>(
+        `/api/admin/providers/${providerId}/models/${encodeURIComponent(modelId)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(updates),
+        },
+      ),
+    onSuccess: (_data, vars) => {
+      void qc.invalidateQueries({
+        queryKey: ["admin", "providers", vars.providerId, "models"],
+      });
+      void qc.invalidateQueries({ queryKey: ["admin", "providers"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "audit"] });
+    },
+  });
+}
+
+export type { ProviderModelDto };
+
 // ── Users ───────────────────────────────────────────────────────────
 
 /** Wire-format shim: server ISO strings, hook renders `Date` where it matters. */
