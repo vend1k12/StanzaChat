@@ -209,9 +209,19 @@ function ChatViewInner({
           }
         }
       }
+      // Flush a deferred URL swap now that the stream has landed. Order
+      // matters: this runs BEFORE `prevStatus.current = status`, and we
+      // deliberately keep both branches inside the same effect so a
+      // second listener doesn't observe `prevStatus.current === "ready"`
+      // (which would silently skip the swap).
+      const pending = pendingUrlSwapRef.current;
+      if (pending) {
+        pendingUrlSwapRef.current = null;
+        router.replace(`/chats/${pending}`, { scroll: false });
+      }
     }
     prevStatus.current = status;
-  }, [status, queryClient, chat, messages, updateChat]);
+  }, [status, queryClient, chat, messages, updateChat, router]);
 
   const isDraft = chatId === null;
   const busy = status === "submitted" || status === "streaming";
@@ -251,18 +261,6 @@ function ChatViewInner({
     },
     [createChat, onPromoteDraft, selection?.providerId, sendMessage],
   );
-
-  // Flush a deferred URL swap once the assistant stream lands. Reading
-  // `router` inside the effect keeps `handleSend` deps small.
-  useEffect(() => {
-    if (prevStatus.current === "streaming" && status === "ready") {
-      const pending = pendingUrlSwapRef.current;
-      if (pending) {
-        pendingUrlSwapRef.current = null;
-        router.replace(`/chats/${pending}`, { scroll: false });
-      }
-    }
-  }, [status, router]);
 
   return (
     <div className="flex flex-1 flex-col bg-canvas">
