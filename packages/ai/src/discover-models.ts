@@ -89,7 +89,12 @@ export async function discoverModels(input: DiscoverInput): Promise<string[]> {
       "A base URL is required for openai-compatible providers.",
     );
   }
-  const baseUrl = rawBase.replace(/\/+$/, "");
+  // Strip trailing slashes with a bounded loop instead of `/\/+$/` — the
+  // greedy regex is quadratic on pathological input (`/////…`) and
+  // CodeQL flags it as a ReDoS surface even though the input is small.
+  let end = rawBase.length;
+  while (end > 0 && rawBase.charCodeAt(end - 1) === 47) end -= 1;
+  const baseUrl = rawBase.slice(0, end);
   const url = `${baseUrl}/models`;
 
   const headers: Record<string, string> = { Accept: "application/json" };
