@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { truncateAll } from "./helpers/db";
+
 /**
  * Phase 3 E2E — SPEC §10 done-when:
  *   register → chat (mocked provider) → artifact renders in sandbox →
@@ -13,9 +15,18 @@ import { expect, test } from "@playwright/test";
  * First successful sign-up becomes the instance admin and auto-creates a
  * personal org + default workspace (SPEC §5.4), so the test user can
  * immediately use chat and (optionally) register a provider config.
+ *
+ * `truncateAll` in `beforeAll` guarantees this spec owns the first
+ * sign-up regardless of file ordering — otherwise `admin.spec.ts`
+ * (which runs first alphabetically) would consume it and the workspace
+ * user would come in as a regular user (403 on admin routes).
  */
 
 test.describe("workspace artifact round-trip", () => {
+  test.beforeAll(async () => {
+    await truncateAll();
+  });
+
   test("register, chat with mock provider, render artifact + versions", async ({
     page,
   }) => {
