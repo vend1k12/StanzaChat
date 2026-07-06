@@ -1,3 +1,5 @@
+import type { ValidationDetails } from "@repo/shared";
+
 /**
  * Typed client-side fetch wrapper for the StanzaChat REST API (SPEC §6).
  *
@@ -6,25 +8,52 @@
  * route's inline 4xx/5xx). `apiFetch` surfaces that as a thrown `ApiError`
  * so callers (TanStack Query hooks, mutations) can branch on `.code`.
  *
+ * When the server throws a `ValidationError`, the body additionally
+ * carries `details: { fieldErrors, formErrors }` — surfaced on
+ * `ApiError.details` so forms can render per-input messages instead of
+ * a single wall-of-text toast.
+ *
  * This module is client-only — it runs in the browser against same-origin
  * routes that read the Better-Auth session cookie.
  */
 
 /** Error body returned by every failing Route Handler. */
 export interface ApiErrorBody {
-  error: { code: string; message: string };
+  error: {
+    code: string;
+    message: string;
+    details?: ValidationDetails;
+  };
 }
 
 /** Typed error thrown by `apiFetch` on a non-2xx response. */
 export class ApiError extends Error {
   readonly code: string;
   readonly status: number;
+  readonly details: ValidationDetails | null;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details: ValidationDetails | null = null,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.details = details;
+  }
+
+  /** Human-readable summary for toasts: message + first field error. */
+  toDisplayMessage(): string {
+    if (this.details) {
+      const firstField = Object.entries(this.details.fieldErrors)[0];
+      const firstMessage = firstField?.[1]?.[0];
+      if (firstField && firstMessage) return `${firstField[0]}: ${firstMessage}`;
+      if (this.details.formErrors.length > 0) return this.details.formErrors[0]!;
+    }
+    return this.message;
   }
 }
 
@@ -55,7 +84,8 @@ export async function apiFetch<T>(
     const code = body?.error?.code ?? "http_error";
     const message =
       body?.error?.message ?? `Request to ${path} failed (${res.status})`;
-    throw new ApiError(res.status, code, message);
+    const details = body?.error?.details ?? null;
+    throw new ApiError(res.status, code, message, details);
   }
 
   // Allow empty 204/empty-body responses to parse as `T` gracefully.

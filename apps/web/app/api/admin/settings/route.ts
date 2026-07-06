@@ -1,5 +1,5 @@
 import { getInstanceSettings, updateInstanceSettings } from "@repo/db";
-import { updateSettingsSchema, ValidationError } from "@repo/shared";
+import { parseWithSchema, updateSettingsSchema } from "@repo/shared";
 
 import { auditContextFor } from "@/lib/audit";
 import { wrapRoute } from "@/lib/http";
@@ -25,16 +25,12 @@ export async function PATCH(request: Request) {
     if (!gate.ok) return rateLimitResponse(gate);
 
     const ctx = await requireInstanceAdmin();
-    const body = await request.json();
-    const parsed = updateSettingsSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new ValidationError(parsed.error.message);
-    }
+    const updates = parseWithSchema(updateSettingsSchema, await request.json());
 
     const audit = await auditContextFor(ctx.session);
     await updateInstanceSettings(
       ctx.db,
-      { registrationMode: parsed.data.registrationMode },
+      { registrationMode: updates.registrationMode },
       audit,
     );
 

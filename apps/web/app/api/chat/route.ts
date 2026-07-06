@@ -4,9 +4,10 @@ import {
   chatStreamSchema,
   NotFoundError,
   parseEnv,
+  parseWithSchema,
   ValidationError,
 } from "@repo/shared";
-import type { LanguageModel, UIMessage } from "ai";
+import type { UIMessage } from "ai";
 import { convertToModelMessages, streamText } from "ai";
 
 import { wrapRoute } from "@/lib/http";
@@ -47,12 +48,10 @@ export async function POST(request: Request) {
     const gate = chatLimiter.consume(ctx.session.user.id);
     if (!gate.ok) return rateLimitResponse(gate);
 
-    const body = await request.json();
-    const parsed = chatStreamSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new ValidationError(parsed.error.message);
-    }
-    const { chatId, messages, modelId } = parsed.data;
+    const { chatId, messages, modelId } = parseWithSchema(
+      chatStreamSchema,
+      await request.json(),
+    );
     const uiMessages = messages as UIMessage[];
 
     const chat = await getChat(ctx.db, ctx.scope, chatId);
@@ -71,21 +70,31 @@ export async function POST(request: Request) {
     });
 
     const env = parseEnv();
-    // `resolveChatModel` returns the Vercel AI SDK model instance typed
-    // as `unknown` — the SDK's provider union is not exported as a single
-    // type. Widen at the single call site where `streamText` needs it.
-    const model = (await resolveChatModel({
+    const resolution = await resolveChatModel({
       db: ctx.db,
       chatModelConfigId: chat.modelConfigId,
       modelId: modelId ?? null,
       env,
-    })) as LanguageModel;
+    });
+    // `resolution.modelInstance` is already typed `LanguageModel` by
+    // `resolveChatModel` — no cast needed here (see project rule
+    // ts-no-inline-cast-access).
+    const model = resolution.modelInstance;
+
+    // Compose the effective system prompt: chat-level prompt wins over
+    // the model default so a per-chat override always applies. Vercel AI
+    // SDK's `instructions` prepends a system message to the stream.
+    const instructions =
+      chat.systemPrompt ?? resolution.settings.systemPrompt ?? undefined;
 
     const modelMessages = await convertToModelMessages(uiMessages);
     const result = streamText({
       model,
       messages: modelMessages,
-      instructions: chat.systemPrompt ?? undefined,
+      instructions,
+      temperature: resolution.settings.temperature ?? undefined,
+      topP: resolution.settings.topP ?? undefined,
+      maxOutputTokens: resolution.settings.maxOutputTokens ?? undefined,
       onEnd: async ({ text, usage }) =>
         persistAssistantTurn({
           db: ctx.db,
@@ -93,7 +102,7 @@ export async function POST(request: Request) {
           chatId,
           text,
           usage,
-          modelId: chat.modelConfigId ?? undefined,
+          modelId: resolution.modelId || (chat.modelConfigId ?? undefined),
         }),
     });
 

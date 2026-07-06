@@ -1,4 +1,4 @@
-import { AppError } from "@repo/shared";
+import { AppError, ValidationError } from "@repo/shared";
 
 /**
  * Single mapper from thrown domain errors to HTTP JSON responses.
@@ -9,10 +9,25 @@ import { AppError } from "@repo/shared";
  * errors become HTTP status codes — matches conventions.md "single
  * mapper in apps/web" rule.
  *
+ * `ValidationError` additionally carries `.details` (per-field errors)
+ * so the client can render inline field-level messages instead of a
+ * single wall-of-text toast. Every other AppError shape stays as
+ * `{ error: { code, message } }`.
+ *
  * NEVER leak stack traces or provider bodies to clients (guardrails,
  * SPEC §7). Unknown errors surface as generic 500.
  */
 export function errorResponse(err: unknown): Response {
+  if (err instanceof ValidationError) {
+    const body = {
+      error: {
+        code: err.code,
+        message: err.message,
+        details: err.details ?? undefined,
+      },
+    };
+    return Response.json(body, { status: err.status });
+  }
   if (err instanceof AppError) {
     return Response.json(
       { error: { code: err.code, message: err.message } },

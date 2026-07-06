@@ -1,5 +1,5 @@
 import { deleteChat, getChat, updateChat } from "@repo/db";
-import { NotFoundError, updateChatSchema, ValidationError } from "@repo/shared";
+import { NotFoundError, parseWithSchema, updateChatSchema } from "@repo/shared";
 
 import { wrapRoute } from "@/lib/http";
 import { requireSessionScopeOrThrow } from "@/lib/session";
@@ -29,13 +29,8 @@ export async function PATCH(
   return wrapRoute(async () => {
     const ctx = await requireSessionScopeOrThrow();
     const { id } = await params;
-    const body = await request.json();
-    const parsed = updateChatSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new ValidationError(parsed.error.message);
-    }
-
-    await updateChat(ctx.db, ctx.scope, id, parsed.data);
+    const updates = parseWithSchema(updateChatSchema, await request.json());
+    await updateChat(ctx.db, ctx.scope, id, updates);
     return Response.json({ ok: true });
   });
 }
