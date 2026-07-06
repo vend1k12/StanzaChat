@@ -13,15 +13,26 @@ export {
 } from "./crypto/index.js";
 export { createMockModel } from "./mock-provider.js";
 export {
+  DISCOVERABLE_PROVIDERS,
+  DiscoverError,
+  type DiscoverInput,
+  discoverModels,
+} from "./discover-models.js";
+export {
   createProvider,
   type CreateProviderInput,
   deleteProvider,
   getDefaultProvider,
   getProvider,
   getProviderById,
+  getProviderModel,
+  listProviderModels,
   listProviders,
+  type ProviderModelRecord,
   type ProviderRecord,
+  type UpdateProviderModelInput,
   updateProvider,
+  updateProviderModel,
 } from "./model-config.js";
 export { resolveChatModel } from "./model-resolver.js";
 export {
