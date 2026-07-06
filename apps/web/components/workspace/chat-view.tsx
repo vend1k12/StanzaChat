@@ -216,6 +216,14 @@ function ChatViewInner({
   const isDraft = chatId === null;
   const busy = status === "submitted" || status === "streaming";
 
+  // When the draft chat is promoted to a real id we still want the URL
+  // to catch up — but only after the assistant stream has landed, so
+  // Next.js's segment-level RSC prefetch for `/chats/{id}` doesn't
+  // race with the in-flight `useChat` render. `pendingUrlSwapRef`
+  // carries the id the effect below flushes on the `streaming → ready`
+  // transition.
+  const pendingUrlSwapRef = useRef<string | null>(null);
+
   const handleSend = useCallback(
     async (text: string) => {
       let id = chatIdRef.current;
@@ -225,10 +233,13 @@ function ChatViewInner({
             modelConfigId: selection?.providerId ?? undefined,
           });
           id = created.id;
-          // Bind the id BEFORE the transport reads it.
+          // Bind the id BEFORE the transport reads it — the very next
+          // `sendMessage` POST will carry the real id in the body.
           chatIdRef.current = id;
           onPromoteDraft(id);
-          router.replace(`/chats/${id}`, { scroll: false });
+          // Defer the URL swap so Next.js doesn't tear down/rebuild the
+          // route subtree while `useChat` is streaming into it.
+          pendingUrlSwapRef.current = id;
         } catch (err) {
           toast.error(
             err instanceof ApiError ? err.message : "Failed to start chat",
@@ -238,8 +249,20 @@ function ChatViewInner({
       }
       void sendMessage({ text });
     },
-    [createChat, onPromoteDraft, router, selection?.providerId, sendMessage],
+    [createChat, onPromoteDraft, selection?.providerId, sendMessage],
   );
+
+  // Flush a deferred URL swap once the assistant stream lands. Reading
+  // `router` inside the effect keeps `handleSend` deps small.
+  useEffect(() => {
+    if (prevStatus.current === "streaming" && status === "ready") {
+      const pending = pendingUrlSwapRef.current;
+      if (pending) {
+        pendingUrlSwapRef.current = null;
+        router.replace(`/chats/${pending}`, { scroll: false });
+      }
+    }
+  }, [status, router]);
 
   return (
     <div className="flex flex-1 flex-col bg-canvas">
