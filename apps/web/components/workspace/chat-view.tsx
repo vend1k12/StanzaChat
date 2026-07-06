@@ -75,6 +75,7 @@ export function ChatView({ chatId }: ChatViewProps) {
   return (
     <ChatViewInner
       key={session}
+      sessionId={session}
       chatId={activeChatId}
       onPromoteDraft={(realId) => setActiveChatId(realId)}
     />
@@ -82,11 +83,16 @@ export function ChatView({ chatId }: ChatViewProps) {
 }
 
 interface ChatViewInnerProps {
+  sessionId: string;
   chatId: string | null;
   onPromoteDraft: (realId: string) => void;
 }
 
-function ChatViewInner({ chatId, onPromoteDraft }: ChatViewInnerProps) {
+function ChatViewInner({
+  sessionId,
+  chatId,
+  onPromoteDraft,
+}: ChatViewInnerProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { data: chat } = useChatQuery(chatId);
@@ -147,6 +153,7 @@ function ChatViewInner({ chatId, onPromoteDraft }: ChatViewInnerProps) {
 
   const { messages, status, sendMessage, error, stop, setMessages } =
     useChat<UIMessage>({
+      id: sessionId,
       transport,
     });
 
