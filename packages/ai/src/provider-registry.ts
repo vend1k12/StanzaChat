@@ -34,11 +34,21 @@ export interface ProviderConfig {
 export function resolveModel(config: ProviderConfig): ResolvedModel {
   switch (config.provider) {
     case "openai": {
+      // Use `.chat(...)` (→ `/chat/completions`) instead of the default
+      // callable shortcut (→ `/responses`). The Responses API is not
+      // universally implemented by third-party gateways/proxies that
+      // otherwise speak the OpenAI wire format, and chat-completions
+      // remains fully supported on real OpenAI — so this is the safer
+      // default for a self-hosted app whose users bring their own
+      // provider host.
       const openai = createOpenAI({
         apiKey: config.apiKey,
         baseURL: config.baseUrl,
       });
-      return { model: config.modelId, modelInstance: openai(config.modelId) };
+      return {
+        model: config.modelId,
+        modelInstance: openai.chat(config.modelId),
+      };
     }
 
     case "anthropic": {
@@ -62,6 +72,10 @@ export function resolveModel(config: ProviderConfig): ResolvedModel {
 
     case "openai-compatible":
     case "ollama": {
+      // Same reasoning as the `openai` case — force `/chat/completions`.
+      // Ollama's OpenAI-compatible endpoint (`/v1/chat/completions`) and
+      // most OSS gateways (LocalAI, LiteLLM, vLLM, one-api, etc.) only
+      // implement chat completions, not the Responses API.
       const openai = createOpenAI({
         apiKey: config.apiKey || "ollama",
         baseURL:
@@ -70,7 +84,10 @@ export function resolveModel(config: ProviderConfig): ResolvedModel {
             ? "http://localhost:11434/v1"
             : undefined),
       });
-      return { model: config.modelId, modelInstance: openai(config.modelId) };
+      return {
+        model: config.modelId,
+        modelInstance: openai.chat(config.modelId),
+      };
     }
 
     default: {
