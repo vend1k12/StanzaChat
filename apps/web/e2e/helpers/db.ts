@@ -23,6 +23,7 @@ export async function truncateAll(): Promise<void> {
       "chats",
       "workspaces",
       "audit_logs",
+      "provider_models",
       "model_configurations",
       "instance_settings",
       "invitation",

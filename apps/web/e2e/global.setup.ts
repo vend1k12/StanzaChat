@@ -28,6 +28,7 @@ export default async function globalSetup(): Promise<void> {
       "chats",
       "workspaces",
       "audit_logs",
+      "provider_models",
       "model_configurations",
       "instance_settings",
       "invitation",
