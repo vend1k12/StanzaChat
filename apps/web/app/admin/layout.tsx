@@ -34,9 +34,9 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="grid min-h-dvh grid-cols-1 bg-canvas lg:grid-cols-[260px_minmax(0,1fr)]">
-      <aside className="hidden border-r border-hairline bg-surface-soft lg:flex lg:flex-col">
-        <div className="border-b border-hairline px-6 py-5">
+    <div className="grid h-dvh grid-cols-1 bg-canvas lg:grid-cols-[260px_minmax(0,1fr)]">
+      <aside className="sticky top-0 hidden h-dvh border-r border-hairline bg-surface-soft lg:flex lg:flex-col">
+        <div className="shrink-0 border-b border-hairline px-6 py-5">
           <Link
             href="/chats"
             className="flex items-center gap-2 text-ink hover:opacity-80"
@@ -48,8 +48,10 @@ export default async function AdminLayout({
           </Link>
           <p className="eyebrow mt-4">Instance admin</p>
         </div>
-        <AdminNav />
-        <div className="mt-auto border-t border-hairline p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <AdminNav />
+        </div>
+        <div className="shrink-0 border-t border-hairline p-4">
           <AdminUserMenu
             email={session.user.email}
             name={session.user.name ?? null}
@@ -57,8 +59,8 @@ export default async function AdminLayout({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-col">
-        <header className="flex items-center justify-between border-b border-hairline bg-canvas/70 px-8 py-4 backdrop-blur-md">
+      <div className="flex h-dvh min-w-0 flex-col overflow-hidden">
+        <header className="flex shrink-0 items-center justify-between border-b border-hairline bg-canvas/70 px-8 py-4 backdrop-blur-md">
           <div className="flex items-center gap-4">
             <Link
               href="/chats"
@@ -75,8 +77,10 @@ export default async function AdminLayout({
             <AdminNav variant="compact" />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10 lg:px-10 lg:py-14">
-          {children}
+        <main className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-10 lg:py-14">
+            {children}
+          </div>
         </main>
       </div>
     </div>
