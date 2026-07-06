@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 
+import { ConfirmProvider } from "@/components/confirm-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -38,7 +39,7 @@ export function Providers({ children }: { children: ReactNode }) {
         enableSystem={false}
         disableTransitionOnChange
       >
-        {children}
+        <ConfirmProvider>{children}</ConfirmProvider>
         <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
