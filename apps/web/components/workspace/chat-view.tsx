@@ -5,7 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import { AlertTriangle, KeyRound } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -94,7 +93,6 @@ function ChatViewInner({
   onPromoteDraft,
 }: ChatViewInnerProps) {
   const queryClient = useQueryClient();
-  const router = useRouter();
   const { data: chat } = useChatQuery(chatId);
   const { data: history, isLoading: historyLoading } = useChatMessages(chatId);
   const updateChat = useUpdateChat();
@@ -214,14 +212,21 @@ function ChatViewInner({
       // deliberately keep both branches inside the same effect so a
       // second listener doesn't observe `prevStatus.current === "ready"`
       // (which would silently skip the swap).
+      //
+      // We use `window.history.replaceState` rather than `router.replace`
+      // so Next.js's App Router does NOT re-fetch the `/chats` layout
+      // (it is `force-dynamic` — a real navigation would remount the
+      // subtree and wipe `useChat`'s in-memory message list). The URL
+      // change is purely cosmetic — the component tree already carries
+      // the promoted chat id via `chatIdRef` + `onPromoteDraft`.
       const pending = pendingUrlSwapRef.current;
       if (pending) {
         pendingUrlSwapRef.current = null;
-        router.replace(`/chats/${pending}`, { scroll: false });
+        window.history.replaceState(null, "", `/chats/${pending}`);
       }
     }
     prevStatus.current = status;
-  }, [status, queryClient, chat, messages, updateChat, router]);
+  }, [status, queryClient, chat, messages, updateChat]);
 
   const isDraft = chatId === null;
   const busy = status === "submitted" || status === "streaming";
