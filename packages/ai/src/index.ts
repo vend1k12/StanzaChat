@@ -11,13 +11,13 @@ export {
   type KeyStore,
   maskApiKey,
 } from "./crypto/index.js";
-export { createMockModel } from "./mock-provider.js";
 export {
   DISCOVERABLE_PROVIDERS,
   DiscoverError,
   type DiscoverInput,
   discoverModels,
 } from "./discover-models.js";
+export { createMockModel } from "./mock-provider.js";
 export {
   createProvider,
   type CreateProviderInput,
@@ -30,9 +30,9 @@ export {
   listProviders,
   type ProviderModelRecord,
   type ProviderRecord,
-  type UpdateProviderModelInput,
   updateProvider,
   updateProviderModel,
+  type UpdateProviderModelInput,
 } from "./model-config.js";
 export { resolveChatModel } from "./model-resolver.js";
 export {
