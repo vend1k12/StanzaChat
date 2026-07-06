@@ -88,13 +88,18 @@ export async function POST(request: Request) {
       chat.systemPrompt ?? resolution.settings.systemPrompt ?? undefined;
 
     const modelMessages = await convertToModelMessages(uiMessages);
+    // Only pass per-model settings when they are configured — the AI
+    // SDK examines options via `key in opts` in some places, and
+    // shipping `temperature: undefined` observably diverges from
+    // omitting the key on certain provider adapters.
+    const { temperature, topP, maxOutputTokens } = resolution.settings;
     const result = streamText({
       model,
       messages: modelMessages,
       instructions,
-      temperature: resolution.settings.temperature ?? undefined,
-      topP: resolution.settings.topP ?? undefined,
-      maxOutputTokens: resolution.settings.maxOutputTokens ?? undefined,
+      ...(temperature !== null ? { temperature } : {}),
+      ...(topP !== null ? { topP } : {}),
+      ...(maxOutputTokens !== null ? { maxOutputTokens } : {}),
       onEnd: async ({ text, usage }) =>
         persistAssistantTurn({
           db: ctx.db,
