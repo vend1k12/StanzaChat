@@ -95,9 +95,7 @@ export const discoverModelsSchema = z
   })
   .refine(
     (v) =>
-      v.provider === "openai" ||
-      v.provider === "ollama" ||
-      Boolean(v.baseUrl),
+      v.provider === "openai" || v.provider === "ollama" || Boolean(v.baseUrl),
     { message: "Base URL is required for openai-compatible providers." },
   );
 export type DiscoverModels = z.infer<typeof discoverModelsSchema>;
@@ -111,7 +109,13 @@ export const updateProviderModelSchema = z.object({
   enabled: z.boolean().optional(),
   temperature: z.number().min(0).max(2).nullable().optional(),
   topP: z.number().min(0).max(1).nullable().optional(),
-  maxOutputTokens: z.number().int().positive().max(1_000_000).nullable().optional(),
+  maxOutputTokens: z
+    .number()
+    .int()
+    .positive()
+    .max(1_000_000)
+    .nullable()
+    .optional(),
   systemPrompt: z.string().max(20_000).nullable().optional(),
 });
 export type UpdateProviderModel = z.infer<typeof updateProviderModelSchema>;

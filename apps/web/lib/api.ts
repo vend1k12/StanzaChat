@@ -50,8 +50,10 @@ export class ApiError extends Error {
     if (this.details) {
       const firstField = Object.entries(this.details.fieldErrors)[0];
       const firstMessage = firstField?.[1]?.[0];
-      if (firstField && firstMessage) return `${firstField[0]}: ${firstMessage}`;
-      if (this.details.formErrors.length > 0) return this.details.formErrors[0]!;
+      if (firstField && firstMessage)
+        return `${firstField[0]}: ${firstMessage}`;
+      if (this.details.formErrors.length > 0)
+        return this.details.formErrors[0]!;
     }
     return this.message;
   }

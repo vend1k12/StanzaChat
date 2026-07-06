@@ -1,7 +1,7 @@
 "use client";
 
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import type { ComponentProps,ComponentPropsWithoutRef } from "react";
+import type { ComponentProps, ComponentPropsWithoutRef } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -53,10 +53,7 @@ function AlertDialogContent({
   );
 }
 
-function AlertDialogHeader({
-  className,
-  ...props
-}: ComponentProps<"div">) {
+function AlertDialogHeader({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       className={cn("flex flex-col gap-1.5 text-left", className)}
@@ -65,10 +62,7 @@ function AlertDialogHeader({
   );
 }
 
-function AlertDialogFooter({
-  className,
-  ...props
-}: ComponentProps<"div">) {
+function AlertDialogFooter({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       className={cn(

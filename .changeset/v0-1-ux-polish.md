@@ -15,7 +15,7 @@ settings.
   swaps to `/chats/{id}` via `router.replace` without remounting the
   stream (no lost tokens between "New chat" click and first response).
 - Compact chat sidebar: tighter rows, grouped by `Today / Yesterday /
-  Previous 7 days / Older` with eyebrow headings.
+Previous 7 days / Older` with eyebrow headings.
 - Admin sidebar now fills the viewport (sticky `h-dvh` grid + scrollable
   main) instead of hugging the content height.
 - New segmented `Cards / Table` view toggle on `/admin/users` and
@@ -48,18 +48,18 @@ settings.
 **Admin: per-model settings**
 
 - New table `provider_models(provider_id, model_id, display_name,
-  enabled, temperature, top_p, max_output_tokens, system_prompt)` with
+enabled, temperature, top_p, max_output_tokens, system_prompt)` with
   `unique(provider_id, model_id)` and `ON DELETE CASCADE` from the
   provider. Drizzle migration `0001_provider_models` backfills the
   legacy `enabled_models: string[]` column before dropping it — clean
   cutover, forward-only.
 - `resolveChatModel` now returns `{ modelInstance, modelId, settings }`;
   `/api/chat` passes `temperature / topP / maxOutputTokens /
-  systemPrompt` into `streamText`. Chat-level `systemPrompt` still wins
+systemPrompt` into `streamText`. Chat-level `systemPrompt` still wins
   over the model default.
 - New `ModelSettingsDialog` (accordion per model) + `GET
-  /api/admin/providers/:id/models` and `PATCH
-  /api/admin/providers/:id/models/:modelId`. Every mutation writes a
+/api/admin/providers/:id/models` and `PATCH
+/api/admin/providers/:id/models/:modelId`. Every mutation writes a
   `model.update` audit row in the same transaction.
 
 **Errors + validation**

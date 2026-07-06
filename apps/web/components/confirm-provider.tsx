@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from "react";
 
 import {
   AlertDialog,
@@ -75,9 +81,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
       <AlertDialog open={pending !== null} onOpenChange={onOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {pending?.options.title ?? ""}
-            </AlertDialogTitle>
+            <AlertDialogTitle>{pending?.options.title ?? ""}</AlertDialogTitle>
             {pending?.options.description ? (
               <AlertDialogDescription>
                 {pending.options.description}

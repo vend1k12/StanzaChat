@@ -40,7 +40,9 @@ export async function POST(request: Request) {
       return Response.json({ models });
     } catch (err) {
       if (err instanceof DiscoverError) {
-        throw new ValidationError(err.message, { code: `discover.${err.code}` });
+        throw new ValidationError(err.message, {
+          code: `discover.${err.code}`,
+        });
       }
       throw err;
     }

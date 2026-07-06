@@ -64,9 +64,7 @@ export default function AdminUsersPage() {
       await update.mutateAsync({ id, updates });
       toast.success(successMessage);
     } catch (err) {
-      toast.error(
-        err instanceof ApiError ? err.message : "Update failed",
-      );
+      toast.error(err instanceof ApiError ? err.message : "Update failed");
     }
   }
 
@@ -148,8 +146,7 @@ function CardsView({
     <ul className="flex flex-col gap-3" data-testid="users-table">
       {users.map((u) => {
         const isSelf = u.id === selfId;
-        const canDemote =
-          !isSelf && !(u.role === "admin" && totalAdmins <= 1);
+        const canDemote = !isSelf && !(u.role === "admin" && totalAdmins <= 1);
         const initials = deriveInitials(u.name, u.email);
         return (
           <li
@@ -202,9 +199,7 @@ function CardsView({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={
-                  (u.role === "admin" && !canDemote) || updatePending
-                }
+                disabled={(u.role === "admin" && !canDemote) || updatePending}
                 title={
                   isSelf
                     ? "You cannot change your own role"
