@@ -1,5 +1,5 @@
 import { listAuditLogs } from "@repo/db";
-import { auditLogsQuerySchema, ValidationError } from "@repo/shared";
+import { auditLogsQuerySchema, parseWithSchema } from "@repo/shared";
 
 import { wrapRoute } from "@/lib/http";
 import { adminLimiter, rateLimitResponse, requestIp } from "@/lib/rate-limit";
@@ -23,27 +23,25 @@ export async function GET(request: Request) {
     const ctx = await requireInstanceAdmin();
 
     const url = new URL(request.url);
-    const parsed = auditLogsQuerySchema.safeParse(
+    const query = parseWithSchema(
+      auditLogsQuerySchema,
       Object.fromEntries(url.searchParams),
     );
-    if (!parsed.success) {
-      throw new ValidationError(parsed.error.message);
-    }
 
     const { rows, total } = await listAuditLogs(ctx.db, {
-      actorUserId: parsed.data.actorUserId,
-      action: parsed.data.action,
-      since: parsed.data.since,
-      until: parsed.data.until,
-      limit: parsed.data.limit,
-      offset: parsed.data.offset,
+      actorUserId: query.actorUserId,
+      action: query.action,
+      since: query.since,
+      until: query.until,
+      limit: query.limit,
+      offset: query.offset,
     });
 
     return Response.json({
       logs: rows,
       total,
-      limit: parsed.data.limit,
-      offset: parsed.data.offset,
+      limit: query.limit,
+      offset: query.offset,
     });
   });
 }

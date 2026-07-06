@@ -3,8 +3,8 @@ import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  parseWithSchema,
   updateUserSchema,
-  ValidationError,
 } from "@repo/shared";
 
 import { auditContextFor } from "@/lib/audit";
@@ -26,11 +26,7 @@ export async function PATCH(
     const ctx = await requireInstanceAdmin();
     const { id } = await params;
 
-    const body = await request.json();
-    const parsed = updateUserSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new ValidationError(parsed.error.message);
-    }
+    const updates = parseWithSchema(updateUserSchema, await request.json());
 
     const target = await getUserById(ctx.db, id);
     if (!target) throw new NotFoundError("User", id);
@@ -40,10 +36,10 @@ export async function PATCH(
     // from either state requires direct DB access (see docs), so we
     // refuse the mutation up front rather than mine out the console.
     if (id === ctx.session.user.id) {
-      if (parsed.data.role !== undefined && parsed.data.role !== "admin") {
+      if (updates.role !== undefined && updates.role !== "admin") {
         throw new ForbiddenError("You cannot demote yourself");
       }
-      if (parsed.data.banned === true) {
+      if (updates.banned === true) {
         throw new ForbiddenError("You cannot ban yourself");
       }
     }
@@ -55,9 +51,9 @@ export async function PATCH(
         ctx.db,
         id,
         {
-          role: parsed.data.role,
-          banned: parsed.data.banned,
-          banReason: parsed.data.banReason ?? undefined,
+          role: updates.role,
+          banned: updates.banned,
+          banReason: updates.banReason ?? undefined,
         },
         audit,
       );
