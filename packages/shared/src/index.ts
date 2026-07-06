@@ -9,9 +9,13 @@ export {
   createChatSchema,
   type CreateProvider,
   createProviderSchema,
+  type DiscoverModels,
+  discoverModelsSchema,
   type UpdateChat,
   updateChatSchema,
   type UpdateProvider,
+  type UpdateProviderModel,
+  updateProviderModelSchema,
   updateProviderSchema,
   type UpdateSettings,
   updateSettingsSchema,
@@ -40,8 +44,10 @@ export {
   ForbiddenError,
   NotFoundError,
   UnauthorizedError,
+  type ValidationDetails,
   ValidationError,
 } from "./errors.js";
+export { flattenZodError, parseWithSchema } from "./http-helpers.js";
 export {
   createRateLimiter,
   type RateLimiter,

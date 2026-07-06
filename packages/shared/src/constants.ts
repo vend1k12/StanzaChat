@@ -33,6 +33,7 @@ export const AUDIT_ACTIONS = [
   "provider.delete",
   "model.enable",
   "model.disable",
+  "model.update",
   "settings.update",
   "user.ban",
   "user.unban",

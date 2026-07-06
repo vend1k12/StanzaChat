@@ -18,9 +18,28 @@ export class AppError extends Error {
   }
 }
 
+/**
+ * Structured per-field validation issues. Server flattens a `ZodError`
+ * into this shape; client renders each entry inline under the offending
+ * form field so users see exactly what's wrong (§UX, ts-no-inline-cast-access
+ * rule doesn't apply — this is a schema-shaped record).
+ */
+export interface ValidationDetails {
+  /** Errors keyed by field path (e.g. `label` or `models.0`). */
+  fieldErrors: Record<string, string[]>;
+  /** Top-level errors not tied to a single field. */
+  formErrors: string[];
+}
+
 export class ValidationError extends AppError {
-  constructor(message: string, code = "validation_error") {
-    super(code, message, 400);
+  readonly details: ValidationDetails | null;
+
+  constructor(
+    message: string,
+    options: { details?: ValidationDetails; code?: string } = {},
+  ) {
+    super(options.code ?? "validation_error", message, 400);
+    this.details = options.details ?? null;
   }
 }
 
