@@ -7,8 +7,8 @@ import {
 import {
   NotFoundError,
   parseEnv,
+  parseWithSchema,
   updateProviderSchema,
-  ValidationError,
 } from "@repo/shared";
 
 import { auditContextFor } from "@/lib/audit";
@@ -46,12 +46,10 @@ export async function PATCH(
 
     const ctx = await requireInstanceAdmin();
     const { id } = await params;
-
-    const body = await request.json();
-    const parsed = updateProviderSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new ValidationError(parsed.error.message);
-    }
+    const updates = parseWithSchema(
+      updateProviderSchema,
+      await request.json(),
+    );
 
     // Verify the target exists so we return 404 instead of a silent no-op.
     const existing = await getProvider(ctx.db, id);
@@ -59,9 +57,9 @@ export async function PATCH(
 
     // Encrypt API key if provided.
     let encryptedApiKey;
-    if (parsed.data.apiKey) {
+    if (updates.apiKey) {
       const keyStore = new AesGcmKeyStore(parseEnv().ENCRYPTION_MASTER_KEY);
-      encryptedApiKey = await keyStore.encrypt(parsed.data.apiKey);
+      encryptedApiKey = await keyStore.encrypt(updates.apiKey);
     }
 
     const audit = await auditContextFor(ctx.session);
@@ -69,12 +67,12 @@ export async function PATCH(
       ctx.db,
       id,
       {
-        label: parsed.data.label,
-        baseUrl: parsed.data.baseUrl || undefined,
+        label: updates.label,
+        baseUrl: updates.baseUrl || undefined,
         encryptedApiKey,
-        enabledModels: parsed.data.enabledModels,
-        isDefault: parsed.data.isDefault,
-        enabled: parsed.data.enabled,
+        models: updates.models,
+        isDefault: updates.isDefault,
+        enabled: updates.enabled,
       },
       audit,
     );

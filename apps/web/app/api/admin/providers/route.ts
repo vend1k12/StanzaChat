@@ -1,5 +1,5 @@
 import { AesGcmKeyStore, createProvider, listProviders } from "@repo/ai";
-import { createProviderSchema, parseEnv, ValidationError } from "@repo/shared";
+import { createProviderSchema, parseEnv, parseWithSchema } from "@repo/shared";
 
 import { auditContextFor } from "@/lib/audit";
 import { wrapRoute } from "@/lib/http";
@@ -25,30 +25,25 @@ export async function POST(request: Request) {
     if (!gate.ok) return rateLimitResponse(gate);
 
     const ctx = await requireInstanceAdmin();
-
-    const body = await request.json();
-    const parsed = createProviderSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new ValidationError(parsed.error.message);
-    }
+    const body = parseWithSchema(createProviderSchema, await request.json());
 
     // Encrypt API key if provided (SPEC §7).
     let encryptedApiKey;
-    if (parsed.data.apiKey) {
+    if (body.apiKey) {
       const keyStore = new AesGcmKeyStore(parseEnv().ENCRYPTION_MASTER_KEY);
-      encryptedApiKey = await keyStore.encrypt(parsed.data.apiKey);
+      encryptedApiKey = await keyStore.encrypt(body.apiKey);
     }
 
     const audit = await auditContextFor(ctx.session);
     const id = await createProvider(
       ctx.db,
       {
-        provider: parsed.data.provider,
-        label: parsed.data.label,
-        baseUrl: parsed.data.baseUrl || undefined,
+        provider: body.provider,
+        label: body.label,
+        baseUrl: body.baseUrl || undefined,
         encryptedApiKey,
-        enabledModels: parsed.data.enabledModels,
-        isDefault: parsed.data.isDefault,
+        models: body.models,
+        isDefault: body.isDefault,
       },
       audit,
     );
